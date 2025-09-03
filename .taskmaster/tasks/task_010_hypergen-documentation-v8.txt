@@ -1,0 +1,54 @@
+# Task ID: 10
+# Title: PHASE 4: Developer Contribution Documentation
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Create comprehensive documentation for contributors and those extending Hypergen's functionality
+# Details:
+Enable community contributions and extensions by providing complete developer documentation.
+
+**Contributing Documentation (4 pages):**
+1. **getting-started.mdoc** - Development environment setup
+   - Repository setup and build process
+   - Running tests and development commands
+   - Code organization and architecture overview
+   - Development workflow and tools
+
+2. **architecture.mdoc** - System architecture deep dive  
+   - Core component relationships and data flow
+   - Plugin system architecture
+   - Template resolution and caching systems
+   - Security and trust system implementation
+
+3. **testing.mdoc** - Testing guidelines and practices
+   - Test structure and organization (test/suites/)
+   - Writing unit tests for new features
+   - Integration testing strategies
+   - Performance testing approaches
+
+4. **pull-requests.mdoc** - Contribution workflow
+   - Branch naming and commit message conventions
+   - Code review process and standards
+   - Documentation requirements for new features
+   - Release process and versioning
+
+**Extending Documentation (4 pages):**
+1. **plugin-development.mdoc** - Creating Hypergen plugins
+2. **custom-engines.mdoc** - Adding new template engines  
+3. **discovery-sources.mdoc** - Custom template source integration
+4. **security-integration.mdoc** - Extending the trust system
+
+**Internals Documentation (4 pages):**
+1. **caching-system.mdoc** - How the multi-level caching works
+2. **template-resolution.mdoc** - Template discovery algorithm
+3. **trust-system.mdoc** - Security implementation details
+4. **performance-monitoring.mdoc** - Performance optimization insights
+
+**Success Criteria:**
+- New contributors can set up development environment
+- Architecture is clearly explained with diagrams
+- All extension points are documented
+- Security implications are well covered
+
+# Test Strategy:
+

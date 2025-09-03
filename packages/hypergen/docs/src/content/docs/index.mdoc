@@ -1,0 +1,95 @@
+---
+title: Hypergen V8 Documentation
+description: Modern template generator with LiquidJS engine, TypeScript actions, and intelligent template discovery
+---
+
+# Hypergen V8
+
+Hypergen V8 is a modern, scalable code generator built with TypeScript. It provides an intuitive template system with LiquidJS engine, TypeScript decorators for actions, and intelligent template discovery from NPM and GitHub.
+
+## Key Features
+
+### 🚀 Template System
+- **Template.yml Configuration**: Rich variable types with validation and defaults
+- **LiquidJS Engine**: Fast, secure templating with rich filters (camelCase, snakeCase, pluralize)
+- **Hybrid Configuration**: template.yml for metadata + frontmatter for file-specific config
+- **Template Composition**: Inheritance and conditional inclusion from remote sources
+
+### ⚡ TypeScript Actions
+- **Decorator Pattern**: Modern `@action` decorators with metadata
+- **Auto-discovery**: CLI automatically finds and registers actions
+- **Parameter Validation**: Type checking before execution
+- **Rich Help System**: Generated from action metadata
+
+### 🔍 Template Discovery
+- **NPM Integration**: `hypergen-*`, `@user/hypergen-*` naming conventions
+- **GitHub Discovery**: Templates via `hypergen-template` topic
+- **URL Resolution**: Direct loading from repos, gists, packages
+- **Creator Trust**: Secure execution with per-creator consent
+
+### 🛡️ Security & Trust
+- **Safe Execution**: Secure template processing environment
+- **Transparent Operations**: Clear logging of remote access
+- **Validation Pipeline**: Comprehensive template validation
+
+## Quick Start
+
+```bash
+# Install Hypergen V8
+bun add hypergen
+
+# Generate using a template
+hypergen <generator> --name=MyProject
+
+# List available actions
+hypergen action list
+
+# Discover templates from NPM/GitHub
+hypergen discover react
+```
+
+## Documentation Sections
+
+### 🚀 Getting Started
+- **[Getting Started Guide](./getting-started)** - Installation, setup, and basic usage
+- **[V8 Features Overview](./v8-features)** - Complete list of implemented features
+- **[Template Composition Guide](./advanced-composition)** - Template inheritance and composition
+
+### 🔧 Core Features  
+- **Template.yml Configuration** - Rich variable types and validation
+- **LiquidJS Templates** - Modern templating with performance benefits
+- **TypeScript Actions** - Decorator-based actions with metadata
+- **Template Discovery** - NPM and GitHub integration
+- **Creator Trust** - Security without friction
+
+### 📋 Development
+- **[V8 Roadmap](./v8-roadmap)** - Future enhancements and HyperDev integration
+
+## Architecture
+
+Hypergen V8 is built on a modular architecture that enables:
+
+- **Template Engines**: Pluggable system with LiquidJS as default, EJS for compatibility
+- **Action System**: TypeScript decorators with auto-discovery and validation
+- **Template Discovery**: Multi-source discovery (NPM, GitHub, local) with caching
+- **Security Model**: Creator trust system with transparent consent
+- **Performance**: <100ms startup, lazy loading, multi-level caching
+
+## Backward Compatibility
+
+Hypergen V8 maintains full backward compatibility:
+
+- **Existing Templates**: All current templates work without modification
+- **EJS Support**: Continued support for `.ejs.t` templates alongside LiquidJS
+- **Frontmatter**: Existing frontmatter patterns fully supported
+- **Zero Breaking Changes**: Seamless upgrade from previous versions
+- **Migration Path**: Gradual adoption of V8 features as needed
+
+## Community
+
+- **GitHub**: [svallory/hypergen](https://github.com/svallory/hypergen)
+- **Documentation**: This site
+- **Issues**: Report bugs and request features on GitHub
+- **Discussions**: Join the community discussions
+
+Get started with the [Getting Started Guide](./getting-started) or explore the [Template Composition Guide](./advanced-composition) to see the new capabilities in Hypergen V8.

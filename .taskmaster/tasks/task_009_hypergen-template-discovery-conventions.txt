@@ -1,0 +1,11 @@
+# Task ID: 9
+# Title: Template Access Pattern - GitHub
+# Status: pending
+# Dependencies: 5, 7
+# Priority: high
+# Description: Implement GitHub repository access patterns (hypergen use owner/repo, hypergen generate github:owner/repo/template)
+# Details:
+Support 'hypergen use owner/repo' (mirrors brew tap) and 'hypergen generate github:owner/repo/template' with 'gh:' shorthand.
+
+# Test Strategy:
+Integration tests for all access patterns, URL resolution tests

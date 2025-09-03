@@ -1,0 +1,11 @@
+# Task ID: 10
+# Title: Template Access Pattern - NPM
+# Status: pending
+# Dependencies: 2, 3, 7
+# Priority: high
+# Description: Implement NPM package access patterns with automatic npm: prefix detection
+# Details:
+Support automatic npm: prefix for @owner/hypergen-* packages and hypergen generate npm:package-name/template patterns.
+
+# Test Strategy:
+Integration tests for NPM access patterns, ambiguity resolution tests

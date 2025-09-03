@@ -1,0 +1,9 @@
+[submodule "packages/moon-launch"]
+	path = packages/moon-launch
+	url = git@github.com:svallory/moon-launch.git
+[submodule "packages/moon-templates"]
+	path = packages/moon-templates
+	url = git@github.com:svallory/moon-templates.git
+[submodule ".moon/templates"]
+	path = .moon/templates
+	url = git@github.com:svallory/moon-templates.git

@@ -1,0 +1,29 @@
+{
+  "epic_name": "v8-launch",
+  "current_step": 4,
+  "completed_steps": [1, 2, 3],
+  "workflow_config": {
+    "no_stop": false,
+    "max_subagents": 9,
+    "use_research": null
+  },
+  "tag_name": "v8-launch",
+  "artifacts": {
+    "original_doc": "original-spec.md",
+    "prd": "prd.md",
+    "taxonomy_update": "analysis/mental-model-decisions.md"
+  },
+  "agents": {
+    "required": ["typescript-expert", "dx-optimizer"],
+    "created": [],
+    "available": ["typescript-expert", "dx-optimizer"]
+  },
+  "execution": {
+    "tasks_in_progress": [],
+    "tasks_completed": [],
+    "parallel_agents_active": 0,
+    "last_task_completion": null
+  },
+  "timestamp": "2025-01-16T17:59:00Z",
+  "last_updated": "2025-01-16T17:59:00Z"
+}

@@ -1,0 +1,9 @@
+// Bun Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`metaverse should run the metaverse tests: use-defaults 1`] = `
+{
+  "actions": [],
+  "success": false,
+  "time": 0,
+}
+`;

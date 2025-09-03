@@ -1,0 +1,29 @@
+{
+  "epic_name": "background-daemon",
+  "current_step": 0,
+  "completed_steps": [],
+  "workflow_config": {
+    "no_stop": false,
+    "max_subagents": 9,
+    "use_research": null
+  },
+  "tag_name": null,
+  "artifacts": {
+    "original_doc": "original-spec.md", 
+    "prd": "prd.md"
+  },
+  "agents": {
+    "required": ["go-systems-expert", "architecture-reviewer", "cross-platform-testing-expert"],
+    "created": [],
+    "available": ["go-systems-expert", "architecture-reviewer", "cross-platform-testing-expert"]
+  },
+  "execution": {
+    "tasks_in_progress": [],
+    "tasks_completed": [],
+    "parallel_agents_active": 0,
+    "last_task_completion": null
+  },
+  "timestamp": "2025-01-16T20:40:00Z",
+  "last_updated": "2025-01-16T20:40:00Z",
+  "status": "ready-for-plan-to-tasks"
+}

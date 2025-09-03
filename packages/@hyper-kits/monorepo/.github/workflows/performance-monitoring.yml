@@ -1,0 +1,683 @@
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - '_templates/**'
+      - 'tests/matrix/**'
+      - 'package.json'
+  schedule:
+    # Run weekly performance monitoring  
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      benchmark_type:
+        description: 'Type of benchmark to run'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - quick
+          - comprehensive
+          - stress
+          - memory
+      baseline_commit:
+        description: 'Baseline commit to compare against'
+        required: false
+        type: string
+
+env:
+  CI: true
+  FORCE_COLOR: true
+  PERFORMANCE_MONITORING: true
+
+jobs:
+  # Detect performance-sensitive changes
+  detect-perf-changes:
+    name: Detect Performance Changes
+    runs-on: ubuntu-latest
+    outputs:
+      should-benchmark: ${{ steps.changes.outputs.should-benchmark }}
+      change-type: ${{ steps.changes.outputs.change-type }}
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Analyze changes
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should-benchmark=true" >> $GITHUB_OUTPUT
+            echo "change-type=scheduled" >> $GITHUB_OUTPUT
+          else
+            # Check if performance-sensitive files changed
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
+            
+            if [[ "$CHANGED_FILES" =~ (src/|_templates/|tests/matrix/|package\.json) ]] || [[ "$CHANGED_FILES" == "all" ]]; then
+              echo "should-benchmark=true" >> $GITHUB_OUTPUT
+              
+              # Determine change type
+              if [[ "$CHANGED_FILES" =~ src/ ]]; then
+                echo "change-type=core" >> $GITHUB_OUTPUT
+              elif [[ "$CHANGED_FILES" =~ _templates/ ]]; then
+                echo "change-type=templates" >> $GITHUB_OUTPUT
+              elif [[ "$CHANGED_FILES" =~ tests/matrix/ ]]; then
+                echo "change-type=testing" >> $GITHUB_OUTPUT
+              else
+                echo "change-type=configuration" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "should-benchmark=false" >> $GITHUB_OUTPUT
+              echo "change-type=none" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  # Quick performance check
+  quick-performance-check:
+    name: Quick Performance Check
+    needs: detect-perf-changes
+    if: needs.detect-perf-changes.outputs.should-benchmark == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build project
+        run: bun run build
+
+      - name: Run quick benchmark
+        run: |
+          bun run benchmark:performance
+        env:
+          BENCHMARK_TYPE: quick
+          BENCHMARK_ITERATIONS: 5
+
+      - name: Upload quick benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: quick-benchmark-results
+          path: test-results/benchmark-report.json
+          retention-days: 7
+
+  # Comprehensive performance benchmarking across platforms
+  comprehensive-benchmarks:
+    name: Comprehensive Benchmarks
+    needs: [detect-perf-changes, quick-performance-check]
+    if: needs.detect-perf-changes.outputs.should-benchmark == 'true' && (github.event.inputs.benchmark_type == 'comprehensive' || needs.detect-perf-changes.outputs.change-type == 'core' || github.event_name == 'schedule')
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18', '20', '22']
+        benchmark-scenario:
+          - name: template-generation
+            description: Template generation performance
+          - name: matrix-validation
+            description: Matrix validation performance
+          - name: file-operations
+            description: File operations performance
+          - name: memory-usage
+            description: Memory usage patterns
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout baseline (if specified)
+        if: github.event.inputs.baseline_commit != ''
+        run: |
+          git fetch origin ${{ github.event.inputs.baseline_commit }}
+          mkdir -p baseline
+          git archive ${{ github.event.inputs.baseline_commit }} | tar -x -C baseline/
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build project
+        run: bun run build
+
+      - name: Install baseline dependencies (if specified)
+        if: github.event.inputs.baseline_commit != ''
+        working-directory: baseline
+        run: |
+          if [[ -f package.json ]]; then
+            bun install
+            bun run build || echo "Baseline build failed"
+          fi
+
+      - name: Run comprehensive benchmark
+        run: |
+          # Create benchmark configuration
+          cat > benchmark-config.json << EOF
+          {
+            "scenario": "${{ matrix.benchmark-scenario.name }}",
+            "platform": "${{ matrix.os }}",
+            "nodeVersion": "${{ matrix.node-version }}",
+            "iterations": 20,
+            "warmupIterations": 5,
+            "memoryMonitoring": true,
+            "cpuProfiling": false,
+            "baseline": ${{ github.event.inputs.baseline_commit != '' && 'true' || 'false' }}
+          }
+          EOF
+          
+          # Run scenario-specific benchmarks
+          case "${{ matrix.benchmark-scenario.name }}" in
+            "template-generation")
+              bun run benchmark:performance --scenario template-generation --config benchmark-config.json
+              ;;
+            "matrix-validation")
+              bun run benchmark:performance --scenario matrix-validation --config benchmark-config.json
+              ;;
+            "file-operations")
+              bun run benchmark:performance --scenario file-operations --config benchmark-config.json
+              ;;
+            "memory-usage")
+              bun run benchmark:performance --scenario memory-usage --config benchmark-config.json
+              ;;
+          esac
+        env:
+          BENCHMARK_TYPE: comprehensive
+          NODE_OPTIONS: '--max-old-space-size=4096'
+          PERFORMANCE_MONITORING: true
+
+      - name: Run baseline comparison (if available)
+        if: github.event.inputs.baseline_commit != ''
+        working-directory: baseline
+        run: |
+          if [[ -f lib/index.js ]]; then
+            case "${{ matrix.benchmark-scenario.name }}" in
+              "template-generation")
+                timeout 300s bun run benchmark:performance --scenario template-generation --config ../benchmark-config.json --output ../baseline-results.json || echo "Baseline benchmark timeout/failed"
+                ;;
+              "matrix-validation")
+                timeout 300s bun run benchmark:performance --scenario matrix-validation --config ../benchmark-config.json --output ../baseline-results.json || echo "Baseline benchmark timeout/failed"
+                ;;
+              "file-operations")
+                timeout 300s bun run benchmark:performance --scenario file-operations --config ../benchmark-config.json --output ../baseline-results.json || echo "Baseline benchmark timeout/failed"
+                ;;
+              "memory-usage")
+                timeout 300s bun run benchmark:performance --scenario memory-usage --config ../benchmark-config.json --output ../baseline-results.json || echo "Baseline benchmark timeout/failed"
+                ;;
+            esac
+          fi
+
+      - name: Generate performance comparison
+        if: github.event.inputs.baseline_commit != ''
+        run: |
+          cat > compare-performance.js << 'EOF'
+          const fs = require('fs');
+          
+          function comparePerformance() {
+            let currentResults = {};
+            let baselineResults = {};
+            
+            // Load current results
+            if (fs.existsSync('test-results/benchmark-report.json')) {
+              currentResults = JSON.parse(fs.readFileSync('test-results/benchmark-report.json', 'utf8'));
+            }
+            
+            // Load baseline results
+            if (fs.existsSync('baseline-results.json')) {
+              baselineResults = JSON.parse(fs.readFileSync('baseline-results.json', 'utf8'));
+            }
+            
+            const comparison = {
+              timestamp: new Date().toISOString(),
+              scenario: process.env.BENCHMARK_SCENARIO,
+              platform: process.env.BENCHMARK_PLATFORM,
+              nodeVersion: process.env.BENCHMARK_NODE_VERSION,
+              current: currentResults,
+              baseline: baselineResults,
+              changes: {}
+            };
+            
+            // Compare key metrics
+            if (currentResults.averageDuration && baselineResults.averageDuration) {
+              const durationChange = ((currentResults.averageDuration - baselineResults.averageDuration) / baselineResults.averageDuration) * 100;
+              comparison.changes.duration = {
+                current: currentResults.averageDuration,
+                baseline: baselineResults.averageDuration,
+                changePercent: durationChange.toFixed(2),
+                regression: durationChange > 5 // 5% threshold
+              };
+            }
+            
+            if (currentResults.memoryPeak && baselineResults.memoryPeak) {
+              const memoryChange = ((currentResults.memoryPeak - baselineResults.memoryPeak) / baselineResults.memoryPeak) * 100;
+              comparison.changes.memory = {
+                current: currentResults.memoryPeak,
+                baseline: baselineResults.memoryPeak,
+                changePercent: memoryChange.toFixed(2),
+                regression: memoryChange > 10 // 10% threshold
+              };
+            }
+            
+            fs.writeFileSync('performance-comparison.json', JSON.stringify(comparison, null, 2));
+            
+            // Output summary
+            console.log('Performance Comparison Summary:');
+            if (comparison.changes.duration) {
+              console.log(`Duration: ${comparison.changes.duration.changePercent}% ${comparison.changes.duration.regression ? '❌ REGRESSION' : '✅ OK'}`);
+            }
+            if (comparison.changes.memory) {
+              console.log(`Memory: ${comparison.changes.memory.changePercent}% ${comparison.changes.memory.regression ? '❌ REGRESSION' : '✅ OK'}`);
+            }
+          }
+          
+          comparePerformance();
+          EOF
+          
+          node compare-performance.js
+        env:
+          BENCHMARK_SCENARIO: ${{ matrix.benchmark-scenario.name }}
+          BENCHMARK_PLATFORM: ${{ matrix.os }}
+          BENCHMARK_NODE_VERSION: ${{ matrix.node-version }}
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ matrix.os }}-node${{ matrix.node-version }}-${{ matrix.benchmark-scenario.name }}
+          path: |
+            test-results/benchmark-report.json
+            performance-comparison.json
+            benchmark-config.json
+          retention-days: 30
+
+      - name: Check for performance regressions
+        if: github.event.inputs.baseline_commit != ''
+        run: |
+          if [[ -f performance-comparison.json ]]; then
+            DURATION_REGRESSION=$(jq -r '.changes.duration.regression // false' performance-comparison.json)
+            MEMORY_REGRESSION=$(jq -r '.changes.memory.regression // false' performance-comparison.json)
+            
+            if [[ "$DURATION_REGRESSION" == "true" ]] || [[ "$MEMORY_REGRESSION" == "true" ]]; then
+              echo "❌ Performance regression detected!"
+              jq -r '.changes' performance-comparison.json
+              # Don't fail the job, just warn
+              echo "::warning::Performance regression detected in ${{ matrix.benchmark-scenario.name }} on ${{ matrix.os }}"
+            fi
+          fi
+
+  # Memory leak detection
+  memory-leak-detection:
+    name: Memory Leak Detection
+    needs: detect-perf-changes
+    if: needs.detect-perf-changes.outputs.should-benchmark == 'true' && (github.event.inputs.benchmark_type == 'memory' || needs.detect-perf-changes.outputs.change-type == 'core')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build project
+        run: bun run build
+
+      - name: Run memory leak detection
+        run: |
+          cat > memory-leak-test.js << 'EOF'
+          const { getValidToolCombinations } = require('./lib/composition');
+          
+          console.log('Starting memory leak detection test...');
+          
+          let iterations = 100;
+          let initialMemory = process.memoryUsage();
+          
+          console.log('Initial memory usage:', initialMemory);
+          
+          // Run multiple iterations to detect leaks
+          for (let i = 0; i < iterations; i++) {
+            // Simulate repeated operations
+            const combinations = getValidToolCombinations();
+            
+            // Force garbage collection periodically
+            if (i % 10 === 0) {
+              if (global.gc) {
+                global.gc();
+              }
+              
+              const currentMemory = process.memoryUsage();
+              const memoryGrowth = currentMemory.heapUsed - initialMemory.heapUsed;
+              
+              console.log(`Iteration ${i}: Memory growth: ${(memoryGrowth / 1024 / 1024).toFixed(2)} MB`);
+              
+              // Check for concerning memory growth
+              if (memoryGrowth > 50 * 1024 * 1024) { // 50MB threshold
+                console.warn(`WARNING: Significant memory growth detected: ${(memoryGrowth / 1024 / 1024).toFixed(2)} MB`);
+              }
+            }
+          }
+          
+          const finalMemory = process.memoryUsage();
+          const totalGrowth = finalMemory.heapUsed - initialMemory.heapUsed;
+          
+          console.log('Final memory usage:', finalMemory);
+          console.log('Total memory growth:', (totalGrowth / 1024 / 1024).toFixed(2), 'MB');
+          
+          // Write results
+          const results = {
+            timestamp: new Date().toISOString(),
+            iterations,
+            initialMemory,
+            finalMemory,
+            totalGrowthMB: totalGrowth / 1024 / 1024,
+            leakDetected: totalGrowth > 100 * 1024 * 1024 // 100MB threshold
+          };
+          
+          require('fs').writeFileSync('memory-leak-report.json', JSON.stringify(results, null, 2));
+          
+          if (results.leakDetected) {
+            console.error('❌ Potential memory leak detected!');
+            process.exit(1);
+          } else {
+            console.log('✅ No significant memory leaks detected');
+          }
+          EOF
+          
+          # Run with garbage collection enabled
+          node --expose-gc memory-leak-test.js
+
+      - name: Upload memory leak report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-leak-report
+          path: memory-leak-report.json
+          retention-days: 14
+
+  # Performance regression analysis
+  performance-analysis:
+    name: Performance Analysis
+    needs: [comprehensive-benchmarks, memory-leak-detection]
+    if: always() && (needs.comprehensive-benchmarks.result == 'success' || needs.comprehensive-benchmarks.result == 'failure')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all benchmark artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: benchmark-results
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate comprehensive performance report
+        run: |
+          cat > performance-analyzer.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          function analyzePerformance() {
+            const resultsDir = './benchmark-results';
+            const report = {
+              timestamp: new Date().toISOString(),
+              summary: {
+                totalBenchmarks: 0,
+                regressions: 0,
+                improvements: 0,
+                platforms: new Set(),
+                scenarios: new Set()
+              },
+              platformResults: {},
+              scenarioResults: {},
+              regressions: [],
+              improvements: [],
+              memoryLeaks: null
+            };
+            
+            if (!fs.existsSync(resultsDir)) {
+              console.log('No benchmark results found');
+              return report;
+            }
+            
+            const artifacts = fs.readdirSync(resultsDir);
+            
+            for (const artifact of artifacts) {
+              if (artifact.startsWith('benchmark-')) {
+                const parts = artifact.replace('benchmark-', '').split('-');
+                if (parts.length >= 4) {
+                  const platform = parts[0];
+                  const nodeVersion = parts[1];
+                  const scenario = parts.slice(2).join('-');
+                  
+                  report.summary.platforms.add(platform);
+                  report.summary.scenarios.add(scenario);
+                  report.summary.totalBenchmarks++;
+                  
+                  const artifactPath = path.join(resultsDir, artifact);
+                  const benchmarkFile = path.join(artifactPath, 'benchmark-report.json');
+                  const comparisonFile = path.join(artifactPath, 'performance-comparison.json');
+                  
+                  if (fs.existsSync(benchmarkFile)) {
+                    try {
+                      const benchmark = JSON.parse(fs.readFileSync(benchmarkFile, 'utf8'));
+                      
+                      if (!report.platformResults[platform]) {
+                        report.platformResults[platform] = [];
+                      }
+                      
+                      if (!report.scenarioResults[scenario]) {
+                        report.scenarioResults[scenario] = [];
+                      }
+                      
+                      const result = {
+                        platform,
+                        nodeVersion,
+                        scenario,
+                        ...benchmark
+                      };
+                      
+                      report.platformResults[platform].push(result);
+                      report.scenarioResults[scenario].push(result);
+                      
+                      // Check for performance comparison
+                      if (fs.existsSync(comparisonFile)) {
+                        const comparison = JSON.parse(fs.readFileSync(comparisonFile, 'utf8'));
+                        
+                        if (comparison.changes) {
+                          if (comparison.changes.duration && comparison.changes.duration.regression) {
+                            report.regressions.push({
+                              platform,
+                              nodeVersion,
+                              scenario,
+                              type: 'duration',
+                              change: comparison.changes.duration.changePercent + '%',
+                              current: comparison.changes.duration.current,
+                              baseline: comparison.changes.duration.baseline
+                            });
+                            report.summary.regressions++;
+                          } else if (comparison.changes.duration && parseFloat(comparison.changes.duration.changePercent) < -5) {
+                            report.improvements.push({
+                              platform,
+                              nodeVersion,
+                              scenario,
+                              type: 'duration',
+                              change: comparison.changes.duration.changePercent + '%',
+                              current: comparison.changes.duration.current,
+                              baseline: comparison.changes.duration.baseline
+                            });
+                            report.summary.improvements++;
+                          }
+                          
+                          if (comparison.changes.memory && comparison.changes.memory.regression) {
+                            report.regressions.push({
+                              platform,
+                              nodeVersion,
+                              scenario,
+                              type: 'memory',
+                              change: comparison.changes.memory.changePercent + '%',
+                              current: comparison.changes.memory.current,
+                              baseline: comparison.changes.memory.baseline
+                            });
+                            report.summary.regressions++;
+                          }
+                        }
+                      }
+                    } catch (e) {
+                      console.log(`Failed to parse benchmark for ${artifact}: ${e.message}`);
+                    }
+                  }
+                }
+              } else if (artifact === 'memory-leak-report') {
+                const memoryFile = path.join(resultsDir, artifact, 'memory-leak-report.json');
+                if (fs.existsSync(memoryFile)) {
+                  try {
+                    report.memoryLeaks = JSON.parse(fs.readFileSync(memoryFile, 'utf8'));
+                  } catch (e) {
+                    console.log('Failed to parse memory leak report');
+                  }
+                }
+              }
+            }
+            
+            // Convert Sets to Arrays
+            report.summary.platforms = Array.from(report.summary.platforms);
+            report.summary.scenarios = Array.from(report.summary.scenarios);
+            
+            return report;
+          }
+          
+          const report = analyzePerformance();
+          fs.writeFileSync('performance-analysis-report.json', JSON.stringify(report, null, 2));
+          
+          // Generate markdown report
+          let markdown = `# Performance Analysis Report\n\n`;
+          markdown += `**Timestamp:** ${report.timestamp}\n`;
+          markdown += `**Commit:** ${process.env.GITHUB_SHA}\n\n`;
+          
+          markdown += `## Summary\n\n`;
+          markdown += `- **Total Benchmarks:** ${report.summary.totalBenchmarks}\n`;
+          markdown += `- **Performance Regressions:** ${report.summary.regressions}\n`;
+          markdown += `- **Performance Improvements:** ${report.summary.improvements}\n`;
+          markdown += `- **Platforms Tested:** ${report.summary.platforms.join(', ')}\n`;
+          markdown += `- **Scenarios Tested:** ${report.summary.scenarios.join(', ')}\n\n`;
+          
+          if (report.summary.regressions > 0) {
+            markdown += `## ⚠️ Performance Regressions\n\n`;
+            markdown += `| Platform | Node | Scenario | Type | Change | Current | Baseline |\n`;
+            markdown += `|----------|------|----------|------|---------|---------|----------|\n`;
+            
+            for (const regression of report.regressions) {
+              markdown += `| ${regression.platform} | ${regression.nodeVersion} | ${regression.scenario} | ${regression.type} | ${regression.change} | ${regression.current} | ${regression.baseline} |\n`;
+            }
+            markdown += `\n`;
+          }
+          
+          if (report.summary.improvements > 0) {
+            markdown += `## ✅ Performance Improvements\n\n`;
+            markdown += `| Platform | Node | Scenario | Type | Change | Current | Baseline |\n`;
+            markdown += `|----------|------|----------|------|---------|---------|----------|\n`;
+            
+            for (const improvement of report.improvements) {
+              markdown += `| ${improvement.platform} | ${improvement.nodeVersion} | ${improvement.scenario} | ${improvement.type} | ${improvement.change} | ${improvement.current} | ${improvement.baseline} |\n`;
+            }
+            markdown += `\n`;
+          }
+          
+          if (report.memoryLeaks) {
+            markdown += `## Memory Leak Analysis\n\n`;
+            if (report.memoryLeaks.leakDetected) {
+              markdown += `❌ **Potential memory leak detected**\n`;
+              markdown += `- Total memory growth: ${report.memoryLeaks.totalGrowthMB.toFixed(2)} MB\n`;
+              markdown += `- Test iterations: ${report.memoryLeaks.iterations}\n\n`;
+            } else {
+              markdown += `✅ **No significant memory leaks detected**\n`;
+              markdown += `- Total memory growth: ${report.memoryLeaks.totalGrowthMB.toFixed(2)} MB\n`;
+              markdown += `- Test iterations: ${report.memoryLeaks.iterations}\n\n`;
+            }
+          }
+          
+          fs.writeFileSync('performance-analysis-report.md', markdown);
+          
+          console.log('Performance analysis completed');
+          console.log(`Regressions: ${report.summary.regressions}`);
+          console.log(`Improvements: ${report.summary.improvements}`);
+          EOF
+          
+          node performance-analyzer.js
+
+      - name: Upload performance analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-analysis-report
+          path: |
+            performance-analysis-report.json
+            performance-analysis-report.md
+          retention-days: 90
+
+      - name: Add analysis to job summary
+        run: |
+          if [[ -f performance-analysis-report.md ]]; then
+            cat performance-analysis-report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for critical performance issues
+        run: |
+          if [[ -f performance-analysis-report.json ]]; then
+            REGRESSIONS=$(jq -r '.summary.regressions' performance-analysis-report.json)
+            MEMORY_LEAK=$(jq -r '.memoryLeaks.leakDetected // false' performance-analysis-report.json)
+            
+            if [[ "$REGRESSIONS" -gt 3 ]]; then
+              echo "❌ Too many performance regressions detected: $REGRESSIONS"
+              echo "::error::Multiple performance regressions detected - review required"
+            elif [[ "$REGRESSIONS" -gt 0 ]]; then
+              echo "⚠️ Performance regressions detected: $REGRESSIONS" 
+              echo "::warning::Performance regressions detected - monitoring recommended"
+            fi
+            
+            if [[ "$MEMORY_LEAK" == "true" ]]; then
+              echo "❌ Memory leak detected"
+              echo "::error::Memory leak detected - immediate attention required"
+            fi
+            
+            if [[ "$REGRESSIONS" -eq 0 ]] && [[ "$MEMORY_LEAK" != "true" ]]; then
+              echo "✅ No performance issues detected"
+            fi
+          fi

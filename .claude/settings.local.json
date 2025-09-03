@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:rcl.rcsagents.io)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_snapshot",
+      "Bash(bun add:*)",
+      "Bash(bun run:*)",
+      "Bash(bun:*)",
+      "Bash(killall:*)",
+      "Bash(sqlite3:*)",
+      "Bash(find:*)",
+      "Bash(curl:*)",
+      "Bash(timeout:*)",
+      "Bash(ng build:*)",
+      "Bash(ng lint:*)",
+      "Bash(npx tsc:*)",
+      "Bash(moon run:*)",
+      "Bash(rm:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(pkill:*)",
+      "Bash(mv:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "playwright",
+    "context7",
+    "appwrite"
+  ]
+}

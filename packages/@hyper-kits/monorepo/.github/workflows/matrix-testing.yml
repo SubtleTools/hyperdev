@@ -1,0 +1,449 @@
+name: Matrix Testing - All Tool Combinations
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'packages/hypergen-monorepo/**'
+      - '.github/workflows/matrix-testing.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'packages/hypergen-monorepo/**'
+      - '.github/workflows/matrix-testing.yml'
+  workflow_dispatch:
+    inputs:
+      run_full_matrix:
+        description: 'Run full matrix testing (slow)'
+        required: false
+        default: 'false'
+        type: boolean
+      parallel_jobs:
+        description: 'Number of parallel jobs'
+        required: false
+        default: '2'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '4'
+
+env:
+  NODE_VERSION: '20'
+  BUN_VERSION: '1.0.0'
+
+jobs:
+  # Validation job to check all combinations are valid
+  validate-combinations:
+    name: Validate Tool Combinations
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        working-directory: packages/hypergen-monorepo
+        run: bun install
+
+      - name: Build package
+        working-directory: packages/hypergen-monorepo
+        run: bun run build
+
+      - name: Validate tool combinations
+        working-directory: packages/hypergen-monorepo
+        run: |
+          echo "🔍 Validating tool combinations..."
+          bun run tests/matrix/combination-validator.ts ./test-results/validation-report.json
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-report
+          path: packages/hypergen-monorepo/test-results/
+          retention-days: 30
+
+  # Matrix testing job
+  matrix-testing:
+    name: Matrix Testing
+    needs: validate-combinations
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18', '20']
+        # Reduce combinations for PR builds
+        include:
+          - test-mode: 'validation-only'
+            os: ubuntu-latest
+            node-version: '20'
+          - test-mode: 'quick-matrix'
+            os: ubuntu-latest 
+            node-version: '18'
+        exclude:
+          # Skip expensive combinations for PR builds
+          - os: windows-latest
+            node-version: '18'
+          - os: macos-latest
+            node-version: '18'
+
+    env:
+      # CI-specific configuration
+      SKIP_PROJECT_GENERATION: ${{ github.event_name == 'pull_request' && github.event.inputs.run_full_matrix != 'true' }}
+      SKIP_TOOL_EXECUTION: ${{ github.event_name == 'pull_request' && github.event.inputs.run_full_matrix != 'true' }}
+      TEST_PARALLELISM: ${{ github.event.inputs.parallel_jobs || '2' }}
+      TEST_OUTPUT_DIR: ./test-results
+      TEST_TIMEOUT: '300000'
+      CI: 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      # Platform-specific package manager setup
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Yarn
+        run: npm install -g yarn
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        working-directory: packages/hypergen-monorepo
+        run: bun install
+
+      - name: Build package
+        working-directory: packages/hypergen-monorepo
+        run: bun run build
+
+      - name: Run matrix testing
+        working-directory: packages/hypergen-monorepo
+        run: |
+          echo "🚀 Starting matrix testing on ${{ runner.os }} with Node.js ${{ matrix.node-version }}"
+          echo "Mode: ${{ env.SKIP_PROJECT_GENERATION == 'true' && 'validation-only' || 'full-matrix' }}"
+          echo "Parallelism: ${{ env.TEST_PARALLELISM }}"
+          
+          # Run the matrix test suite
+          bun test tests/matrix/matrix-testing.test.ts --timeout=${{ env.TEST_TIMEOUT }}
+
+      - name: Run CI integration tests
+        working-directory: packages/hypergen-monorepo
+        run: |
+          echo "🔧 Running CI integration tests..."
+          bun run tests/matrix/ci-integration.ts
+
+      - name: Run performance benchmarks
+        working-directory: packages/hypergen-monorepo
+        if: github.event.inputs.run_full_matrix == 'true' || github.ref == 'refs/heads/main'
+        run: |
+          echo "📊 Running performance benchmarks..."
+          bun run tests/matrix/performance-benchmark.ts ./test-results/benchmark
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ runner.os }}-node${{ matrix.node-version }}
+          path: packages/hypergen-monorepo/test-results/
+          retention-days: 7
+
+      - name: Upload JUnit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit-results-${{ runner.os }}-node${{ matrix.node-version }}
+          path: packages/hypergen-monorepo/test-results/junit-report.xml
+          retention-days: 7
+
+      # Publish test results
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always() && runner.os == 'Linux'
+        with:
+          files: packages/hypergen-monorepo/test-results/junit-report.xml
+          check_name: Matrix Test Results (${{ runner.os }}, Node ${{ matrix.node-version }})
+
+  # Performance analysis job
+  performance-analysis:
+    name: Performance Analysis
+    needs: matrix-testing
+    runs-on: ubuntu-latest
+    if: always() && (github.event.inputs.run_full_matrix == 'true' || github.ref == 'refs/heads/main')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Bun  
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        working-directory: packages/hypergen-monorepo
+        run: bun install
+
+      - name: Aggregate performance data
+        working-directory: packages/hypergen-monorepo
+        run: |
+          echo "📊 Aggregating performance data from all test runs..."
+          
+          # Create aggregation script
+          cat > aggregate-results.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Find all benchmark report files
+          const findFiles = (dir, filename) => {
+            let results = [];
+            if (!fs.existsSync(dir)) return results;
+            
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+              const fullPath = path.join(dir, file);
+              const stat = fs.statSync(fullPath);
+              
+              if (stat.isDirectory()) {
+                results = results.concat(findFiles(fullPath, filename));
+              } else if (file === filename) {
+                results.push(fullPath);
+              }
+            }
+            return results;
+          };
+          
+          const reportFiles = findFiles('../../artifacts', 'benchmark-report.json');
+          console.log(`Found ${reportFiles.length} benchmark reports`);
+          
+          const aggregated = {
+            timestamp: new Date().toISOString(),
+            platforms: [],
+            summary: {
+              totalTests: 0,
+              totalDuration: 0,
+              averageDuration: 0,
+              successRate: 0
+            }
+          };
+          
+          for (const reportFile of reportFiles) {
+            try {
+              const data = JSON.parse(fs.readFileSync(reportFile, 'utf-8'));
+              aggregated.platforms.push(data);
+              aggregated.summary.totalTests += data.testConfig.totalCombinations;
+              aggregated.summary.totalDuration += data.summary.totalDuration;
+            } catch (error) {
+              console.warn(`Failed to read ${reportFile}:`, error.message);
+            }
+          }
+          
+          if (aggregated.platforms.length > 0) {
+            aggregated.summary.averageDuration = aggregated.summary.totalDuration / aggregated.platforms.length;
+            const totalSuccess = aggregated.platforms.reduce((sum, p) => sum + (p.summary.successRate || 0), 0);
+            aggregated.summary.successRate = totalSuccess / aggregated.platforms.length;
+          }
+          
+          fs.writeFileSync('./aggregated-performance-report.json', JSON.stringify(aggregated, null, 2));
+          console.log('📋 Aggregated performance report written');
+          EOF
+          
+          node aggregate-results.js
+
+      - name: Generate performance insights
+        working-directory: packages/hypergen-monorepo  
+        run: |
+          echo "🔍 Generating performance insights..."
+          
+          if [ -f ./aggregated-performance-report.json ]; then
+            cat > performance-summary.md << 'EOF'
+          # Matrix Testing Performance Summary
+          
+          This report aggregates performance data across all platform and Node.js version combinations.
+          
+          ## Key Metrics
+          
+          EOF
+          
+            # Extract key metrics using jq if available, otherwise use node
+            if command -v jq &> /dev/null; then
+              echo "- **Total Test Combinations:** $(jq -r '.summary.totalTests' ./aggregated-performance-report.json)" >> performance-summary.md
+              echo "- **Average Duration:** $(jq -r '.summary.averageDuration' ./aggregated-performance-report.json | cut -d. -f1)ms" >> performance-summary.md  
+              echo "- **Success Rate:** $(jq -r '.summary.successRate * 100' ./aggregated-performance-report.json | cut -d. -f1)%" >> performance-summary.md
+              echo "- **Platforms Tested:** $(jq -r '.platforms | length' ./aggregated-performance-report.json)" >> performance-summary.md
+            else
+              echo "- **Report Generated:** $(date)" >> performance-summary.md
+              echo "- **Raw Data:** Available in aggregated-performance-report.json" >> performance-summary.md
+            fi
+            
+            echo "" >> performance-summary.md
+            echo "## Platform Breakdown" >> performance-summary.md
+            echo "" >> performance-summary.md
+            echo "| Platform | Combinations | Avg Duration | Success Rate |" >> performance-summary.md
+            echo "|----------|--------------|--------------|--------------|" >> performance-summary.md
+            echo "| Cross-platform | Aggregated data available in JSON report | | |" >> performance-summary.md
+            
+            echo "📋 Performance summary generated"
+          else
+            echo "⚠️  No aggregated performance data available"
+          fi
+
+      - name: Upload performance analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-analysis
+          path: |
+            packages/hypergen-monorepo/aggregated-performance-report.json
+            packages/hypergen-monorepo/performance-summary.md
+          retention-days: 30
+
+      - name: Comment performance results
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && github.event.inputs.run_full_matrix == 'true'
+        with:
+          script: |
+            const fs = require('fs');
+            const path = './packages/hypergen-monorepo/performance-summary.md';
+            
+            if (fs.existsSync(path)) {
+              const summary = fs.readFileSync(path, 'utf-8');
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 📊 Matrix Testing Performance Results\n\n${summary}\n\n*Full performance data available in workflow artifacts*`
+              });
+            }
+
+  # Failure analysis job
+  failure-analysis:
+    name: Failure Analysis
+    needs: matrix-testing
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Analyze failures
+        run: |
+          echo "🔍 Analyzing test failures..."
+          
+          # Find all summary.json files
+          find ./artifacts -name "summary.json" -type f | while read -r file; do
+            echo "📋 Processing: $file"
+            
+            # Extract failure information
+            if command -v jq &> /dev/null; then
+              failed_count=$(jq -r '.failed' "$file" 2>/dev/null || echo "0")
+              total_count=$(jq -r '.total' "$file" 2>/dev/null || echo "0") 
+              
+              if [ "$failed_count" -gt 0 ]; then
+                echo "❌ Found $failed_count failures out of $total_count tests in $file"
+                
+                # Extract failed combinations
+                echo "Failed combinations:"
+                jq -r '.failedCombinations[]? | "- \(.combination): \(.error)"' "$file" 2>/dev/null || echo "  Unable to extract failure details"
+              else
+                echo "✅ No failures in $file"
+              fi
+            else
+              echo "⚠️  jq not available, manual analysis required for $file"
+            fi
+            echo ""
+          done
+
+      - name: Create failure summary
+        run: |
+          cat > failure-summary.md << 'EOF'
+          # Matrix Testing Failure Analysis
+          
+          This workflow run encountered test failures. Please review the following:
+          
+          ## Quick Actions
+          
+          1. **Check test logs** in the failed job artifacts
+          2. **Review validation report** for tool combination issues  
+          3. **Check platform-specific failures** across different OS/Node.js versions
+          4. **Run locally** using the same configuration that failed
+          
+          ## Debugging Commands
+          
+          ```bash
+          # Run validation only
+          cd packages/hypergen-monorepo
+          bun run tests/matrix/combination-validator.ts
+          
+          # Run matrix tests locally
+          SKIP_PROJECT_GENERATION=true bun test tests/matrix/matrix-testing.test.ts
+          
+          # Run specific combination test
+          bun run tests/matrix/ci-integration.ts
+          ```
+          
+          ## Artifacts Available
+          
+          Check the workflow artifacts for:
+          - Test results and logs
+          - JUnit reports
+          - Performance data
+          - Validation reports
+          
+          EOF
+          
+          echo "📋 Failure summary created"
+
+      - name: Upload failure analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-analysis
+          path: failure-summary.md
+          retention-days: 7

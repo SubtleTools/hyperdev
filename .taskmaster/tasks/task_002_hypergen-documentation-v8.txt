@@ -1,0 +1,31 @@
+# Task ID: 2
+# Title: PHASE 1: Getting Started Tutorial Track
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Create complete 6-page tutorial sequence that takes new users from installation to first success
+# Details:
+The getting started track is critical for user onboarding and must work flawlessly:
+
+**Getting Started Pages:**
+1. **installation.mdoc** - Detailed installation for all platforms
+2. **first-template.mdoc** - Generate first code with working examples
+3. **understanding-templates.mdoc** - Core concepts and mental models
+4. **using-presets.mdoc** - Working with template presets (key feature)
+5. **finding-templates.mdoc** - Discovery from npm packages and GitHub
+6. **next-steps.mdoc** - Clear progression paths
+
+**Requirements:**
+- All examples must work with current Hypergen version
+- Focus on npm package templates (hypergen-starlight example)
+- Show preset system in action
+- Clear progression from simple to advanced
+- Test with actual new users to verify 5-minute success goal
+
+**Success Criteria:**
+- New user can install and generate first template in 5 minutes
+- All tutorial examples execute successfully
+- Clear understanding of core concepts achieved
+
+# Test Strategy:
+

@@ -1,0 +1,55 @@
+# Task ID: 5
+# Title: PHASE 2: Template Creation Guides
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Create comprehensive guides for template creators covering all aspects of building professional templates
+# Details:
+Template creation is a core workflow that needs complete documentation. Based on codebase analysis, these features are implemented and working:
+
+**Guides to Create (6 pages):**
+
+1. **template-basics.mdoc** - Basic template creation workflow
+   - File structure and naming conventions
+   - Basic template.yml configuration
+   - Simple EJS template examples
+   - Testing your first template
+
+2. **template-yml-configuration.mdoc** - Complete configuration reference
+   - All template.yml options and schema
+   - Variable definitions and validation
+   - Preset configuration
+   - Examples for common patterns
+
+3. **template-variables.mdoc** - Variable system deep dive
+   - Variable types (string, boolean, enum, array)
+   - Validation patterns and constraints
+   - Default values and required fields
+   - Conditional variables
+
+4. **conditional-logic.mdoc** - Template conditional rendering
+   - EJS conditional syntax (`<%_ if (condition) { _%>`)
+   - Liquid conditional syntax
+   - Complex logic patterns
+   - Best practices for maintainable conditions
+
+5. **file-structure.mdoc** - File-based routing system
+   - How template directory structure maps to output
+   - Frontmatter `to:` directive patterns
+   - Dynamic file naming with variables
+   - Multi-file template organization
+
+6. **testing-templates.mdoc** - Template testing strategies
+   - Manual testing workflows
+   - Automated testing approaches
+   - Validation tools and linting
+   - Common issues and debugging
+
+**Implementation Requirements:**
+- All examples must work with current Hypergen
+- Cover both EJS and Liquid template engines
+- Include real-world patterns from hypergen-starlight
+- Cross-reference with API documentation
+
+# Test Strategy:
+

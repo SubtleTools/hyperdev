@@ -1,0 +1,52 @@
+# Task ID: 1
+# Title: PHASE 1: Critical Foundation - Root Pages
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Create and fix the 5 critical root pages that form users' first impression of Hypergen
+# Details:
+Root pages are the entry point for all users and must be perfect:
+
+1. **index.mdoc** - Main landing page with value proposition and quick start
+2. **overview.mdoc** - What is Hypergen, key benefits, use cases  
+3. **quick-start.mdoc** - 5-minute success guide with working examples
+4. **installation.mdoc** - Install options, requirements, setup instructions
+5. **faq.mdoc** - Most common questions and answers
+
+These pages must:
+- Show accurate CLI examples that work with current version
+- Focus on working features (npm packages, presets, trust system)
+- Remove references to non-existent V8 decorator features
+- Provide immediate value and clear next steps
+
+Priority: CRITICAL - These determine first impressions and user conversion
+
+# Test Strategy:
+
+
+# Subtasks:
+## 1. Create landing page (index.mdoc) [pending]
+### Dependencies: None
+### Description: Main landing page with value proposition, key features, and immediate quick start
+### Details:
+The landing page is the first thing users see and must immediately communicate value:
+
+**Content Requirements:**
+- Clear value proposition: "The scalable code generator that saves you time"
+- Key benefits: npm templates, preset system, enterprise features
+- Immediate quick start example that works
+- Navigation to getting started guide
+- Feature highlights with working examples
+
+**Technical Requirements:**
+- Replace existing index.mdoc content
+- Remove references to non-working V8 features
+- Include working CLI examples
+- Cross-reference to other critical pages
+- SEO optimization with proper meta tags
+
+**Success Criteria:**
+- Users understand what Hypergen does in 30 seconds
+- Quick start example works perfectly
+- Clear path to getting started tutorial
+

@@ -1,0 +1,800 @@
+{
+  "master": {
+    "tasks": {
+      "master": []
+    },
+    "metadata": {
+      "version": "1.0",
+      "created": "2025-01-16T17:59:00Z",
+      "updated": "2025-01-16T17:59:00Z",
+      "description": "Tasks for master context"
+    }
+  },
+  "v8-launch": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Enhanced Template.yml Configuration System",
+        "description": "Implement rich variable types, validation, composition, and lifecycle hooks building on the existing template parser",
+        "details": "Enhance the existing src/config/template-parser.ts to support:\n- Rich variable types (array, object, file, directory)\n- Pattern matching and constraints validation\n- Template composition and inheritance\n- Lifecycle hooks for pre/post processing\n- Backward compatibility with current frontmatter system",
+        "testStrategy": "Unit tests for parser, integration tests for variable validation, backward compatibility tests",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Complete CLI Commands Implementation",
+        "description": "Implement all planned CLI commands including template validation, listing, URL resolution, and system status",
+        "details": "Extend the existing CLI structure in src/cli/cli.ts to add:\n- Template validation: `hypergen template validate <template>`\n- Template listing: `hypergen template list [directory]`\n- System status: `hypergen system status`\n- URL resolution: `hypergen url resolve <url>`\n- Enhanced help system and error messages",
+        "testStrategy": "CLI integration tests, command output validation, error handling tests",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "File-based Routing System",
+        "description": "Implement automatic path generation from file structure with dynamic interpolation and convention over configuration",
+        "details": "Create a new routing system that:\n- Automatically generates paths from template file structure\n- Supports dynamic variable interpolation in paths\n- Follows convention over configuration principles\n- Eliminates need for manual `to:` specification in frontmatter\n- Integrates with existing template discovery system",
+        "testStrategy": "Path generation tests, variable interpolation tests, integration with existing template system",
+        "status": "done",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Developer Tools and Template Authoring",
+        "description": "Create comprehensive developer tools for template validation, linting, preview modes, and enhanced authoring experience",
+        "details": "Implement developer productivity tools:\n- Template validation and linting tools\n- Preview mode for template outputs\n- Interactive template development workflow\n- Template testing framework\n- IDE integration helpers\n- Enhanced error messages with contextual suggestions",
+        "testStrategy": "Tool functionality tests, validation accuracy tests, preview generation tests",
+        "status": "done",
+        "dependencies": [
+          1,
+          2
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Migration Tools and Utilities",
+        "description": "Create tools to migrate from frontmatter to template.yml format and assist with version upgrades",
+        "details": "Build migration utilities:\n- Frontmatter to template.yml converter\n- Template format migration wizard\n- Backward compatibility layer during transition\n- Migration validation and testing tools\n- Documentation and guides for migration process\n- Automated migration scripts for bulk conversions",
+        "testStrategy": "Migration accuracy tests, backward compatibility tests, conversion validation",
+        "status": "done",
+        "dependencies": [
+          1
+        ],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Performance Optimizations and Scalability",
+        "description": "Enhance performance with improved caching, parallel processing, and maintain startup speed under 100ms",
+        "details": "Implement performance improvements:\n- Enhanced caching mechanisms for template resolution\n- Parallel processing for multi-template operations\n- Memory usage optimizations for large generator sets\n- Startup time optimizations (maintain <100ms target)\n- Performance benchmarking and monitoring tools\n- Scalability testing for 1000+ generators",
+        "testStrategy": "Performance benchmarks, load testing, memory profiling, startup time validation",
+        "status": "done",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Testing and Quality Assurance",
+        "description": "Achieve 99%+ test coverage for all new features with comprehensive testing strategy",
+        "details": "Implement comprehensive testing:\n- Unit tests for all new parser and CLI functionality\n- Integration tests for template.yml system\n- End-to-end tests for complete workflows\n- Backward compatibility test suite\n- Performance regression testing\n- Documentation testing and validation\n- Test automation and CI/CD integration",
+        "testStrategy": "Achieve 99%+ coverage, automated test execution, regression testing",
+        "status": "done",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Documentation and User Guides",
+        "description": "Create comprehensive documentation covering all V8 enhancements and new features",
+        "details": "Develop complete documentation:\n- Template.yml configuration guide and examples\n- CLI command reference and usage patterns\n- File-based routing documentation and conventions\n- Developer tools usage guides\n- Migration guides and best practices\n- API documentation for new features\n- Tutorial series for common use cases\n- Update existing documentation site",
+        "testStrategy": "Documentation accuracy validation, example code testing, user journey validation",
+        "status": "done",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "priority": "high",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-26T20:59:52.678Z",
+      "updated": "2025-08-26T23:39:43.242Z",
+      "description": "Tasks for v8-launch epic - Hypergen V8 enhancement project including template.yml system, CLI commands, file-based routing, and developer tools"
+    }
+  },
+  "hypergen-template-discovery-conventions": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "NPM Convention Implementation - Core Detection Logic",
+        "description": "Update isHypergenPackage() method to name-based detection only, supporting hypergen-*, @username/hypergen-*, and @hypergen/template-* patterns",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [],
+        "details": "Remove existing keyword, hypergen field, and 'generator' detection methods. Implement clean name-based pattern matching for NPM packages following the established conventions.",
+        "testStrategy": "Unit tests for all three naming patterns, regression tests to ensure old detection methods are removed",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "NPM Registry API Integration",
+        "description": "Implement NPM Registry API search with caching for template discovery",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "details": "Use NPM Registry API: https://registry.npmjs.org/-/v1/search?text=<pattern> for searching packages. Implement search patterns for name-based matching and add caching layer for performance.",
+        "testStrategy": "Integration tests with actual NPM registry, cache validation tests, rate limiting tests",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Scoped Package Support",
+        "description": "Add comprehensive support for scoped packages (@username/hypergen-*, @hypergen/template-*)",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "details": "Extend detection logic to properly handle scoped packages. Ensure template resolution works with scoped package names.",
+        "testStrategy": "Unit tests for scoped package detection, integration tests with actual scoped packages",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "GitHub Topic-based Discovery",
+        "description": "Implement GitHub API search for repositories with 'hypergen-template' topic",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [],
+        "details": "Use GitHub API: GET /search/repositories?q=topic:hypergen-template for repository discovery. Connect to existing URL resolution system.",
+        "testStrategy": "Integration tests with GitHub API, repository structure validation tests",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Repository Structure Detection",
+        "description": "Add detection for template.yml (single template) and hypergen.yml (multi-template) repository structures",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "details": "Implement repository contents inspection via GitHub Contents API. Validate template.yml and hypergen.yml structures and provide clear error messages for invalid configurations.",
+        "testStrategy": "Tests for both single and multi-template repository structures, validation error handling tests",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Creator Trust System - Core Infrastructure",
+        "description": "Implement Creator trust storage and management system",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [],
+        "details": "Create CreatorTrust interface and local storage system. Trust is per-creator (user/organization), not per-repository. Store trust relationships with timestamps and user context.",
+        "testStrategy": "Unit tests for trust storage, integration tests for trust persistence",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Trust Prompt System",
+        "description": "Add trust prompts and confirmation flows for untrusted creators",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "details": "Implement 'Do you want to trust this creator?' prompts with clear explanations. Show creator information and security implications.",
+        "testStrategy": "User interface tests, prompt flow validation, security messaging tests",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Trust Command Implementation",
+        "description": "Add 'hypergen trust <creator>' command and trust listing functionality",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "details": "Implement CLI command to manually trust creators. Add listing of trusted creators and untrust functionality.",
+        "testStrategy": "CLI command tests, trust management workflow tests",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Template Access Pattern - GitHub",
+        "description": "Implement GitHub repository access patterns (hypergen use owner/repo, hypergen generate github:owner/repo/template)",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          5,
+          7
+        ],
+        "details": "Support 'hypergen use owner/repo' (mirrors brew tap) and 'hypergen generate github:owner/repo/template' with 'gh:' shorthand.",
+        "testStrategy": "Integration tests for all access patterns, URL resolution tests",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Template Access Pattern - NPM",
+        "description": "Implement NPM package access patterns with automatic npm: prefix detection",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3,
+          7
+        ],
+        "details": "Support automatic npm: prefix for @owner/hypergen-* packages and hypergen generate npm:package-name/template patterns.",
+        "testStrategy": "Integration tests for NPM access patterns, ambiguity resolution tests",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Template Configuration Schema",
+        "description": "Implement hypergen.yml configuration schema for multi-template repositories",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "details": "Define and implement the hypergen.yml schema with templates array, metadata, and validation. Support template path resolution and metadata extraction.",
+        "testStrategy": "Schema validation tests, configuration parsing tests, metadata extraction tests",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Cosmiconfig Integration",
+        "description": "Use cosmiconfig for all configuration file discovery across NPM and GitHub sources",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          11
+        ],
+        "details": "Implement cosmiconfig for NPM packages (prefer package.json but support hypergen.yml/json) and GitHub repositories (hypergen.yml at repository root).",
+        "testStrategy": "Configuration discovery tests, cosmiconfig integration tests, fallback behavior tests",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Caching and Performance Optimization",
+        "description": "Implement caching for template search results, creator trust relationships, and repository metadata",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          4,
+          6
+        ],
+        "details": "Add 1-hour cache for template search results, persistent creator trust storage, and lazy loading of remote template metadata. Target <500ms for cached results.",
+        "testStrategy": "Performance benchmarks, cache invalidation tests, lazy loading validation",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Security Integration",
+        "description": "Integrate Creator trust system with template execution pipeline",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          7,
+          9,
+          10
+        ],
+        "details": "Ensure trust checks are enforced before template execution. Implement sandboxed environment for template execution and prevent automatic code execution during discovery.",
+        "testStrategy": "Security tests for trust enforcement, sandboxing validation, execution prevention tests",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Error Handling and User Experience",
+        "description": "Implement comprehensive error handling with clear user guidance for invalid templates and trust issues",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          11,
+          14
+        ],
+        "details": "Provide helpful error messages for invalid template structures, clear trust prompts explaining security implications, and guidance for template authors.",
+        "testStrategy": "Error message validation tests, user experience testing, error recovery tests",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Legacy System Removal",
+        "description": "Remove old 4-method detection system (keywords, hypergen field, generator detection)",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2,
+          4
+        ],
+        "details": "Clean removal of all legacy detection methods. Update existing template examples to use new conventions. No backward compatibility required.",
+        "testStrategy": "Regression tests to ensure old methods are completely removed, compatibility validation",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Documentation and Migration Guide",
+        "description": "Create comprehensive documentation for new template discovery conventions and migration from old system",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          16
+        ],
+        "details": "Document publishing guidelines for template authors, migration documentation from 4-method system, API reference for new conventions, and security best practices.",
+        "testStrategy": "Documentation completeness review, migration guide validation, community feedback integration",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Integration Testing and Validation",
+        "description": "End-to-end integration testing with actual NPM packages and GitHub repositories using new conventions",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          14,
+          15
+        ],
+        "details": "Comprehensive testing with real-world template sources, performance validation (<500ms cached, <2s uncached), security testing for Creator trust system.",
+        "testStrategy": "End-to-end integration tests, performance benchmarks, security validation, user acceptance testing",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-27T07:22:13.919Z",
+      "updated": "2025-08-27T16:34:56.665Z",
+      "description": "Tasks for hypergen-template-discovery-conventions epic - Standardized template discovery conventions for NPM and GitHub with Creator trust system"
+    }
+  },
+  "hypergen-documentation-v8": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "PHASE 1: Critical Foundation - Root Pages",
+        "description": "Create and fix the 5 critical root pages that form users' first impression of Hypergen",
+        "details": "Root pages are the entry point for all users and must be perfect:\n\n1. **index.mdoc** - Main landing page with value proposition and quick start\n2. **overview.mdoc** - What is Hypergen, key benefits, use cases  \n3. **quick-start.mdoc** - 5-minute success guide with working examples\n4. **installation.mdoc** - Install options, requirements, setup instructions\n5. **faq.mdoc** - Most common questions and answers\n\nThese pages must:\n- Show accurate CLI examples that work with current version\n- Focus on working features (npm packages, presets, trust system)\n- Remove references to non-existent V8 decorator features\n- Provide immediate value and clear next steps\n\nPriority: CRITICAL - These determine first impressions and user conversion",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create landing page (index.mdoc)",
+            "description": "Main landing page with value proposition, key features, and immediate quick start",
+            "details": "The landing page is the first thing users see and must immediately communicate value:\n\n**Content Requirements:**\n- Clear value proposition: \"The scalable code generator that saves you time\"\n- Key benefits: npm templates, preset system, enterprise features\n- Immediate quick start example that works\n- Navigation to getting started guide\n- Feature highlights with working examples\n\n**Technical Requirements:**\n- Replace existing index.mdoc content\n- Remove references to non-working V8 features\n- Include working CLI examples\n- Cross-reference to other critical pages\n- SEO optimization with proper meta tags\n\n**Success Criteria:**\n- Users understand what Hypergen does in 30 seconds\n- Quick start example works perfectly\n- Clear path to getting started tutorial",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 1
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "PHASE 1: Getting Started Tutorial Track",
+        "description": "Create complete 6-page tutorial sequence that takes new users from installation to first success",
+        "details": "The getting started track is critical for user onboarding and must work flawlessly:\n\n**Getting Started Pages:**\n1. **installation.mdoc** - Detailed installation for all platforms\n2. **first-template.mdoc** - Generate first code with working examples\n3. **understanding-templates.mdoc** - Core concepts and mental models\n4. **using-presets.mdoc** - Working with template presets (key feature)\n5. **finding-templates.mdoc** - Discovery from npm packages and GitHub\n6. **next-steps.mdoc** - Clear progression paths\n\n**Requirements:**\n- All examples must work with current Hypergen version\n- Focus on npm package templates (hypergen-starlight example)\n- Show preset system in action\n- Clear progression from simple to advanced\n- Test with actual new users to verify 5-minute success goal\n\n**Success Criteria:**\n- New user can install and generate first template in 5 minutes\n- All tutorial examples execute successfully\n- Clear understanding of core concepts achieved",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "PHASE 1: npm Package Template System Documentation",
+        "description": "Comprehensively document the working npm package template system - Hypergen's most important undocumented feature",
+        "details": "The npm package template system is fully implemented and working but barely documented. This is a CRITICAL gap since it's a core differentiating feature.\n\n**What needs to be documented:**\n\n**Core System:**\n- How `hypergen starlight` resolves to `hypergen-starlight` npm package\n- Global template caching in `~/.hypergen/templates/`\n- Version management and automatic updates\n- Cache directory structure and management\n\n**User Workflows:**\n- Discovering npm template packages\n- Using templates with `hypergen <package-name> [options]`\n- Working with versioned templates `hypergen starlight@1.2.0`\n- Understanding preset system integration\n\n**Template Publisher Guide:**\n- Publishing templates to npm\n- Package naming conventions (hypergen-*, @scope/hypergen-*)\n- Template structure requirements\n- Version management strategies\n- preset configuration in template.yml\n\n**Examples to Document:**\n- `hypergen starlight --preset=full-featured --projectFolder=my-docs`\n- Cache management commands\n- Version-specific usage\n- Custom npm registries\n\n**Files to Create/Update:**\n- guides/sharing-templates/npm-packages.mdoc\n- getting-started/finding-templates.mdoc\n- reference/cli/action.mdoc (npm resolution)\n- examples/workflows/npm-publishing.mdoc\n\nThis is the highest priority documentation work since this feature works perfectly but users don't know about it.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "PHASE 1: Remove Misleading V8 Future Feature Documentation",
+        "description": "Clean up documentation that describes non-existent V8 features as if they're currently available",
+        "details": "Current documentation contains references to V8 features that don't exist yet, causing user confusion and frustration.\n\n**Issues to Fix:**\n\n**1. Action Decorator Syntax**\n- Remove examples showing `@action()` decorators that don't work\n- Document actual template.yml + actions.ts patterns that do work\n- Update all code examples to use current syntax\n\n**2. V8 Feature Pages**\n- Review docs/src/content/docs/v8-features.mdoc\n- Remove or clearly mark features as \"planned\" vs \"implemented\"  \n- Focus documentation on what actually works today\n\n**3. CLI Examples**\n- Audit all CLI command examples in existing docs\n- Update to match actual CLI implementation\n- Test all examples to ensure they work\n\n**4. Configuration Examples**\n- Verify all hypergen.json and template.yml examples\n- Update to match current schema implementations\n- Remove references to non-existent configuration options\n\n**Files to Audit:**\n- docs/src/content/docs/v8-features.mdoc\n- docs/src/content/docs/advanced-composition.mdoc  \n- docs/src/content/docs/getting-started.mdoc\n- docs-backup/ folder content (extract valuable patterns)\n\n**Success Criteria:**\n- Zero references to non-working decorator syntax\n- All CLI examples tested and working\n- Clear distinction between current vs planned features\n- No user confusion from misleading documentation",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "PHASE 2: Template Creation Guides",
+        "description": "Create comprehensive guides for template creators covering all aspects of building professional templates",
+        "details": "Template creation is a core workflow that needs complete documentation. Based on codebase analysis, these features are implemented and working:\n\n**Guides to Create (6 pages):**\n\n1. **template-basics.mdoc** - Basic template creation workflow\n   - File structure and naming conventions\n   - Basic template.yml configuration\n   - Simple EJS template examples\n   - Testing your first template\n\n2. **template-yml-configuration.mdoc** - Complete configuration reference\n   - All template.yml options and schema\n   - Variable definitions and validation\n   - Preset configuration\n   - Examples for common patterns\n\n3. **template-variables.mdoc** - Variable system deep dive\n   - Variable types (string, boolean, enum, array)\n   - Validation patterns and constraints\n   - Default values and required fields\n   - Conditional variables\n\n4. **conditional-logic.mdoc** - Template conditional rendering\n   - EJS conditional syntax (`<%_ if (condition) { _%>`)\n   - Liquid conditional syntax\n   - Complex logic patterns\n   - Best practices for maintainable conditions\n\n5. **file-structure.mdoc** - File-based routing system\n   - How template directory structure maps to output\n   - Frontmatter `to:` directive patterns\n   - Dynamic file naming with variables\n   - Multi-file template organization\n\n6. **testing-templates.mdoc** - Template testing strategies\n   - Manual testing workflows\n   - Automated testing approaches\n   - Validation tools and linting\n   - Common issues and debugging\n\n**Implementation Requirements:**\n- All examples must work with current Hypergen\n- Cover both EJS and Liquid template engines\n- Include real-world patterns from hypergen-starlight\n- Cross-reference with API documentation",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "PHASE 2: Essential Practical Examples",
+        "description": "Create 5 core template examples that demonstrate real-world patterns and can be copy-pasted by users",
+        "details": "Users learn best from working examples. These examples must be practical, complete, and demonstrate different template patterns.\n\n**Examples to Create:**\n\n1. **React Component Template**\n   - Complete React component with TypeScript\n   - Props interface, styles, tests, stories\n   - Demonstrates: complex file generation, conditional logic\n   - Shows: modern React patterns, testing integration\n\n2. **REST API Endpoint Template**  \n   - Express/Fastify endpoint with validation\n   - Route handler, middleware, tests\n   - Demonstrates: backend patterns, request/response types\n   - Shows: API documentation generation, error handling\n\n3. **CLI Tool Template**\n   - Complete CLI application setup\n   - Command parsing, help system, configuration\n   - Demonstrates: project scaffolding, executable setup\n   - Shows: npm package.json configuration, binary setup\n\n4. **Database Migration Template**\n   - SQL migration files with rollback\n   - Schema changes, data transformations\n   - Demonstrates: versioned file generation, SQL patterns\n   - Shows: migration naming conventions, safety patterns\n\n5. **Full Stack Application Template**\n   - Complete application with frontend/backend\n   - Multi-directory structure, configuration files\n   - Demonstrates: complex project scaffolding\n   - Shows: preset system integration, advanced composition\n\n**Requirements:**\n- Each example includes complete source code\n- Working template.yml with presets\n- Documentation explaining patterns used\n- Cross-references to relevant guides\n- All examples tested and verified working\n\n**File Locations:**\n- examples/templates/ directory\n- Each example gets its own .mdoc file\n- Include downloadable template packages",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "PHASE 2: Complete CLI Command Reference",
+        "description": "Document all 18+ CLI commands with complete option reference based on actual implementation",
+        "details": "Based on src/cli/cli.ts analysis, Hypergen has 18+ CLI commands that need complete documentation. Currently most are undocumented.\n\n**Commands to Document:**\n\n**Core Commands:**\n- `hypergen action <name>` - Execute template actions (including npm packages)\n- `hypergen <npm-package>` - Direct npm template execution\n- `hypergen discover` - Find available generators\n- `hypergen list` - List available actions  \n- `hypergen info <action>` - Show action details\n\n**Management Commands:**\n- `hypergen template validate|info|list|examples`\n- `hypergen init workspace|generator`\n- `hypergen system status|version|help`\n- `hypergen config info|validate|create`\n\n**Advanced Commands:**\n- `hypergen trust status|add|remove|clear`  \n- `hypergen use|unuse <source>` - Template source management\n- `hypergen install|remove|update` - Package management\n- `hypergen clean|cleanup` - Cache management\n- `hypergen dev lint|preview|test` - Developer tools\n- `hypergen perf analyze|benchmark` - Performance tools\n- `hypergen migrate from-hygen|validate` - Migration tools\n\n**Documentation Structure:**\n- One page per major command group\n- Complete syntax reference for each command\n- All options and flags documented  \n- Working examples for each command\n- Error handling and troubleshooting\n- Cross-references to relevant guides\n\n**Files to Create:**\n- reference/cli/commands.mdoc (overview)\n- reference/cli/action.mdoc\n- reference/cli/template.mdoc\n- reference/cli/system.mdoc\n- reference/cli/trust.mdoc\n- reference/cli/options.mdoc (global flags)",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "PHASE 3: Advanced Features Documentation",
+        "description": "Document the advanced features that are implemented but undocumented: trust system, performance optimization, GitHub integration",
+        "details": "Hypergen has several sophisticated features that are fully implemented but lack documentation. These are competitive advantages that users don't know about.\n\n**Advanced Features to Document:**\n\n1. **Trust System** (src/trust/)\n   - Security model for external templates\n   - Trust CLI commands and workflows  \n   - Configuration and policy management\n   - Integration with npm packages and GitHub repos\n\n2. **Performance & Caching** (src/caching/, src/performance/)\n   - Multi-level caching system\n   - Template store optimization\n   - Performance monitoring tools\n   - Cache management and debugging\n\n3. **GitHub Integration** (src/discovery/github-*)\n   - Using GitHub repositories as template sources\n   - Access pattern parsing and authentication\n   - Repository structure detection\n   - Private repository support\n\n4. **CLI Automation & Scripting**\n   - Batch operations and scripting patterns\n   - CI/CD integration strategies\n   - Configuration management\n   - Environment-specific workflows\n\n5. **Developer Tools** (src/developer-tools/)\n   - Template validation and linting\n   - Preview mode for testing\n   - IDE integration capabilities\n   - Testing framework integration\n\n**Documentation Structure:**\n- guides/advanced-features/ directory\n- Each feature gets comprehensive guide\n- Security considerations prominently featured\n- Enterprise usage patterns included\n- Integration examples with common tools\n\n**Success Criteria:**\n- Advanced users can configure and use all features\n- Security implications clearly explained\n- Enterprise patterns well documented\n- Integration guides work with popular tools",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "PHASE 3: Complete Example Library",
+        "description": "Build comprehensive library of 16 practical examples covering all major template patterns and integration scenarios",
+        "details": "Complete the example library to provide copy-paste solutions for common use cases. This supports self-service learning and reduces support burden.\n\n**Template Examples (5 remaining):**\n- Database schema template\n- Docker configuration template  \n- Terraform infrastructure template\n- Test suite generator template\n- Configuration file template\n\n**Workflow Examples (4 pages):**\n- Monorepo scaffolding workflow\n- Microservice generation pipeline\n- Documentation site creation\n- Testing framework setup\n\n**Integration Examples (4 pages):**  \n- GitHub Actions CI/CD integration\n- Docker container integration\n- VS Code extension integration\n- npm scripts automation\n\n**Pattern Examples (3 pages):**\n- Template composition and inheritance\n- Conditional generation based on environment\n- Multi-file template organization\n\n**Requirements for Each Example:**\n- Complete, working template code\n- template.yml with preset configurations\n- Step-by-step usage instructions\n- Expected output examples\n- Common variations and customizations\n- Troubleshooting section\n\n**Quality Standards:**\n- All examples tested with current Hypergen version\n- Clear explanations of design decisions\n- Cross-references to relevant guides\n- Downloadable as working templates\n- Consistent formatting and style\n\n**File Organization:**\n- examples/ directory with subdirectories\n- Each example in separate .mdoc file  \n- Supporting files in template packages\n- Integration with main navigation",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "PHASE 4: Developer Contribution Documentation",
+        "description": "Create comprehensive documentation for contributors and those extending Hypergen's functionality",
+        "details": "Enable community contributions and extensions by providing complete developer documentation.\n\n**Contributing Documentation (4 pages):**\n1. **getting-started.mdoc** - Development environment setup\n   - Repository setup and build process\n   - Running tests and development commands\n   - Code organization and architecture overview\n   - Development workflow and tools\n\n2. **architecture.mdoc** - System architecture deep dive  \n   - Core component relationships and data flow\n   - Plugin system architecture\n   - Template resolution and caching systems\n   - Security and trust system implementation\n\n3. **testing.mdoc** - Testing guidelines and practices\n   - Test structure and organization (test/suites/)\n   - Writing unit tests for new features\n   - Integration testing strategies\n   - Performance testing approaches\n\n4. **pull-requests.mdoc** - Contribution workflow\n   - Branch naming and commit message conventions\n   - Code review process and standards\n   - Documentation requirements for new features\n   - Release process and versioning\n\n**Extending Documentation (4 pages):**\n1. **plugin-development.mdoc** - Creating Hypergen plugins\n2. **custom-engines.mdoc** - Adding new template engines  \n3. **discovery-sources.mdoc** - Custom template source integration\n4. **security-integration.mdoc** - Extending the trust system\n\n**Internals Documentation (4 pages):**\n1. **caching-system.mdoc** - How the multi-level caching works\n2. **template-resolution.mdoc** - Template discovery algorithm\n3. **trust-system.mdoc** - Security implementation details\n4. **performance-monitoring.mdoc** - Performance optimization insights\n\n**Success Criteria:**\n- New contributors can set up development environment\n- Architecture is clearly explained with diagrams\n- All extension points are documented\n- Security implications are well covered",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "PHASE 4: Support and Troubleshooting System",
+        "description": "Build comprehensive self-service support system to reduce support burden and help users resolve issues independently",
+        "details": "Create a complete support system that enables 80% of user questions to be answered through documentation.\n\n**Troubleshooting Documentation (4 pages):**\n\n1. **common-issues.mdoc** - FAQ and frequent problems\n   - Installation issues on different platforms\n   - Template generation failures and solutions\n   - Configuration problems and fixes\n   - Performance issues and optimization\n\n2. **error-messages.mdoc** - Error code reference\n   - All error codes with explanations\n   - Step-by-step resolution procedures\n   - Common causes and prevention\n   - When to seek additional help\n\n3. **performance-issues.mdoc** - Performance debugging guide\n   - Identifying slow template generation\n   - Cache optimization strategies\n   - Network-related performance issues\n   - Monitoring and profiling tools\n\n4. **security-concerns.mdoc** - Security troubleshooting\n   - Trust system configuration issues\n   - External template security validation\n   - Permission and access problems\n   - Security best practices\n\n**Migration Help (3 pages):**\n1. **migration-issues.mdoc** - Common migration problems\n2. **compatibility.mdoc** - Version compatibility matrix  \n3. **legacy-support.mdoc** - Legacy feature support\n\n**Community Resources (3 pages):**\n1. **getting-help.mdoc** - Where and how to get help\n2. **reporting-bugs.mdoc** - Bug reporting process\n3. **feature-requests.mdoc** - Feature request process\n\n**Implementation Requirements:**\n- Each troubleshooting guide includes step-by-step solutions\n- Error messages linked to specific resolution procedures\n- Search-optimized content for common problems\n- Links to relevant guides and references\n- Community resource integration",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "PHASE 4: TypeScript API Reference Generation",
+        "description": "Generate comprehensive TypeScript API documentation using TypeDoc and integrate it with the main documentation site",
+        "details": "Complete the documentation ecosystem with full TypeScript API reference that developers can use to extend and integrate with Hypergen.\n\n**TypeDoc Integration:**\n\n1. **Setup TypeDoc Configuration**\n   - Configure typedoc.json for complete API coverage\n   - Set up build process integration\n   - Configure theme and styling to match docs site\n   - Enable search and navigation features\n\n2. **API Documentation Scope**\n   - All exported classes, interfaces, functions\n   - Core types and configuration interfaces  \n   - Plugin system APIs and extension points\n   - Template engine interfaces\n   - CLI integration APIs\n\n3. **Documentation Enhancement**\n   - Add comprehensive JSDoc comments to source code\n   - Include usage examples in API comments\n   - Document parameter validation and error cases\n   - Cross-reference with main documentation\n\n4. **Integration with Main Site**\n   - Link API docs from main navigation\n   - Cross-reference between guides and API docs\n   - Ensure consistent styling and branding\n   - Set up automated generation on releases\n\n**Key API Areas to Document:**\n- Template processing and rendering APIs\n- Configuration and validation interfaces\n- Plugin and extension system\n- CLI command integration points\n- Caching and performance APIs\n- Trust and security system interfaces\n\n**Quality Standards:**\n- All public APIs have complete JSDoc comments\n- Examples provided for complex interfaces\n- Error handling patterns documented\n- Integration examples included\n- Version compatibility noted\n\n**Automation:**\n- Generate API docs on each release\n- Validate API documentation completeness\n- Check for broken cross-references\n- Update integration examples automatically",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-28T05:06:35.434Z",
+      "updated": "2025-08-28T13:31:39.338Z",
+      "description": "Complete documentation system for Hypergen V8 - 90+ pages covering all features and user journeys"
+    }
+  },
+  "hypergen-monorepo-consolidation": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Initialize hypergen-monorepo package structure",
+        "description": "Set up the foundation package with git repository, npm package.json, TypeScript configuration, and basic project structure",
+        "details": "Create the core package structure for @hypergen/monorepo-pack including package.json with proper metadata, TypeScript configuration, basic folder structure (lib/, templates/, tests/), and git repository initialization. Include proper npm scripts for build, test, and publish workflows.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Create main template.yml configuration",
+        "description": "Design and implement the primary template.yml file with interactive prompts for tool selection",
+        "details": "Create comprehensive template.yml configuration defining user prompts for tool selection (linter: eslint/biome, formatter: prettier/dprint, test: vitest/bun-test, package manager), variable validation, and conditional includes. Include tool compatibility matrix validation and user guidance.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Convert core Moon workspace templates to EJS",
+        "description": "Transform existing moon-templates workspace templates into EJS format for Hypergen compatibility",
+        "details": "Convert essential workspace configuration templates including moon.yml, .moon/workspace.yml, package.json, and TypeScript configurations from the moon-templates repository into EJS templates with appropriate variable substitutions and conditional logic.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          2
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement ESLint configuration templates",
+        "description": "Create EJS templates for ESLint configurations supporting TypeScript monorepo setup",
+        "details": "Build comprehensive ESLint configuration templates (eslint.config.js) with TypeScript support, monorepo-aware settings, and integration with moon workspace structure. Include proper rule sets for library and application packages.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Prettier configuration templates",
+        "description": "Create EJS templates for Prettier configurations with TypeScript and monorepo optimization",
+        "details": "Build Prettier configuration templates (prettier.config.js) optimized for TypeScript monorepos, including appropriate formatting rules, ignore patterns, and integration with moon workspace patterns.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Vitest configuration templates",
+        "description": "Create EJS templates for Vitest test runner configurations supporting monorepo structure",
+        "details": "Build Vitest configuration templates (vitest.config.js) with TypeScript support, proper path mapping for monorepo packages, coverage reporting, and integration with moon task runners.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Add Biome configuration templates (alternative linter)",
+        "description": "Create EJS templates for Biome as an alternative to ESLint with TypeScript monorepo support",
+        "details": "Build Biome configuration templates (biome.json) as alternative linting solution, with TypeScript support, proper rule configuration for monorepo structure, and conditional inclusion based on user tool selection.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          4
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Add dprint configuration templates (alternative formatter)",
+        "description": "Create EJS templates for dprint as an alternative formatter to Prettier",
+        "details": "Build dprint configuration templates (dprint.json) as alternative formatting solution, with TypeScript support, appropriate formatting rules for monorepo structure, and conditional inclusion based on user tool selection.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          5
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Add Bun test configuration templates (alternative test runner)",
+        "description": "Create EJS templates for Bun's test runner as an alternative to Vitest",
+        "details": "Build Bun test configuration templates and integration with TypeScript monorepo structure, including proper test patterns, coverage configuration, and moon integration as alternative to Vitest.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          6
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement tool compatibility validation logic",
+        "description": "Create TypeScript library for validating tool combinations and preventing incompatible selections",
+        "details": "Build comprehensive tool compatibility validation system that checks user tool selections, prevents known incompatible combinations, and provides helpful error messages. Include compatibility matrix for all supported tools (eslint/biome + prettier/dprint + vitest/bun-test).",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          2
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Create library project templates",
+        "description": "Build EJS templates for generating library packages within the monorepo",
+        "details": "Create comprehensive templates for TypeScript library packages including package.json configuration, build scripts, export declarations, and proper integration with the monorepo structure and selected tools.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          10
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Create CLI tool project templates",
+        "description": "Build EJS templates for generating CLI tool packages within the monorepo",
+        "details": "Create templates for TypeScript CLI tool packages including proper bin configuration, commander.js setup, package.json with CLI metadata, and integration with the monorepo build and test systems.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          10
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Implement template composition logic",
+        "description": "Create TypeScript logic for dynamically composing templates based on user tool selections",
+        "details": "Build the core template composition system that conditionally includes the right configuration templates based on user selections, handles template inheritance, and ensures all generated files are properly integrated.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          10
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Create matrix testing for all tool combinations",
+        "description": "Implement comprehensive testing that validates all 16 tool combinations generate working projects",
+        "details": "Build automated testing system that generates projects with all possible tool combinations (eslint/biome × prettier/dprint × vitest/bun-test × npm/pnpm/yarn/bun), runs lint/test/build on each, and validates they work correctly.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          13
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Setup cross-platform CI/CD testing pipeline",
+        "description": "Configure GitHub Actions for testing template generation across Windows, macOS, and Linux",
+        "details": "Create comprehensive GitHub Actions workflows that test template generation and project functionality across all three major platforms, including proper Node.js versions matrix and package manager combinations.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          14
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Implement error handling and validation",
+        "description": "Add comprehensive error handling for invalid configurations and edge cases",
+        "details": "Build robust error handling system with meaningful error messages, validation for user inputs, graceful fallbacks for missing dependencies, and helpful suggestions for fixing common issues.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          13
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Optimize template generation performance",
+        "description": "Implement performance optimizations to meet <30 second generation target",
+        "details": "Optimize template processing, file generation, and package installation to meet the <30 second requirement. Include parallel processing where possible, template caching, and efficient file I/O patterns.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          16
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Create comprehensive documentation and examples",
+        "description": "Write complete documentation covering installation, usage, customization, and troubleshooting",
+        "details": "Create detailed README, API documentation, usage examples for different workflows, troubleshooting guide, and migration guide from moon-launch CLI. Include examples of all supported tool combinations.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          17
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Setup npm package publishing workflow",
+        "description": "Configure automated publishing to npm with proper versioning and release management",
+        "details": "Set up semantic versioning, automated releases with GitHub Actions, proper npm package configuration, scoped package setup (@hypergen/monorepo-pack), and release notes generation.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          15
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Integrate with Hypergen CLI patterns",
+        "description": "Ensure seamless integration with Hypergen's existing CLI and patterns",
+        "details": "Test and validate integration with the main Hypergen CLI, ensure consistent command patterns, proper trust system integration, and compatibility with existing Hypergen workflows and configurations.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [
+          19
+        ],
+        "priority": "high",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-31T07:18:02.720Z",
+      "updated": "2025-08-31T09:54:02.133Z",
+      "description": "Tasks for hypergen-monorepo-consolidation epic - creating unified monorepo template pack"
+    }
+  }
+}

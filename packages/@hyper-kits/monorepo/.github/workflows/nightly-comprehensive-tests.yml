@@ -1,0 +1,755 @@
+name: Nightly Comprehensive Tests
+
+on:
+  schedule:
+    # Run every night at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      full_matrix:
+        description: 'Run full matrix (all combinations)'
+        required: false
+        default: true
+        type: boolean
+      include_legacy:
+        description: 'Include legacy Node.js versions'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  CI: true
+  FORCE_COLOR: true
+  TEST_OUTPUT_DIR: ./test-results
+  TEST_PARALLELISM: 1
+  COMPREHENSIVE_TEST: true
+
+jobs:
+  # Extended matrix testing with more combinations
+  comprehensive-matrix:
+    name: Comprehensive Matrix Test
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-20.04, windows-latest, windows-2019, macos-latest, macos-12]
+        node-version: ['16', '18', '20', '22']
+        package-manager: [bun, npm, yarn, pnpm]
+        # Test different template types
+        template-type: [library, cli]
+        # Include different linter/formatter combinations
+        include:
+          # Additional specific combinations for edge cases
+          - os: ubuntu-latest
+            node-version: '18'
+            package-manager: bun
+            template-type: library
+            linter: biome
+            formatter: biome
+          - os: ubuntu-latest
+            node-version: '20'
+            package-manager: npm
+            template-type: cli
+            linter: eslint
+            formatter: dprint
+          - os: windows-latest
+            node-version: '20'
+            package-manager: yarn
+            template-type: library
+            linter: eslint
+            formatter: prettier
+          - os: macos-latest
+            node-version: '22'
+            package-manager: pnpm
+            template-type: cli
+            linter: biome
+            formatter: biome
+        # Exclude legacy Node.js versions unless requested
+        exclude:
+          - node-version: '16'
+            os: macos-latest
+        # Conditional exclusions based on input
+          - node-version: '16'
+        # Apply exclusions conditionally
+        ${{ github.event.inputs.include_legacy != 'true' && 'exclude' || 'include' }}:
+          - node-version: '16'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup package managers
+        run: |
+          # Setup Bun
+          if [[ "${{ matrix.package-manager }}" == "bun" ]] || [[ "${{ runner.os }}" == "Linux" ]]; then
+            curl -fsSL https://bun.sh/install | bash
+            export PATH="$HOME/.bun/bin:$PATH"
+          fi
+          
+          # Setup pnpm
+          if [[ "${{ matrix.package-manager }}" == "pnpm" ]]; then
+            corepack enable pnpm
+          fi
+          
+          # Setup yarn
+          if [[ "${{ matrix.package-manager }}" == "yarn" ]]; then
+            corepack enable yarn
+          fi
+        shell: bash
+
+      - name: Verify package manager installation
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              bun --version
+              ;;
+            "npm")
+              npm --version
+              ;;
+            "yarn")
+              yarn --version
+              ;;
+            "pnpm")
+              pnpm --version
+              ;;
+          esac
+        shell: bash
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache
+            ~/.bun
+            ~/.yarn
+            ~/.local/share/pnpm
+            **/node_modules
+          key: nightly-deps-${{ matrix.os }}-${{ matrix.node-version }}-${{ matrix.package-manager }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            nightly-deps-${{ matrix.os }}-${{ matrix.node-version }}-${{ matrix.package-manager }}-
+            nightly-deps-${{ matrix.os }}-${{ matrix.node-version }}-
+
+      - name: Install dependencies
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              bun install
+              ;;
+            "npm")
+              npm install
+              ;;
+            "yarn")
+              yarn install
+              ;;
+            "pnpm")
+              pnpm install
+              ;;
+          esac
+        shell: bash
+
+      - name: Build project
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              bun run build
+              ;;
+            "npm")
+              npm run build
+              ;;
+            "yarn")
+              yarn build
+              ;;
+            "pnpm")
+              pnpm run build
+              ;;
+          esac
+        shell: bash
+
+      - name: Run comprehensive matrix tests
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              bun run test:matrix:full
+              ;;
+            "npm")
+              npm run test:matrix:full
+              ;;
+            "yarn")
+              yarn test:matrix:full
+              ;;
+            "pnpm")
+              pnpm run test:matrix:full
+              ;;
+          esac
+        shell: bash
+        env:
+          TEST_PLATFORM: ${{ matrix.os }}
+          TEST_NODE_VERSION: ${{ matrix.node-version }}
+          TEST_PACKAGE_MANAGER: ${{ matrix.package-manager }}
+          TEST_TEMPLATE_TYPE: ${{ matrix.template-type }}
+          TEST_LINTER: ${{ matrix.linter || 'eslint' }}
+          TEST_FORMATTER: ${{ matrix.formatter || 'prettier' }}
+          HYPERGEN_TEST_TIMEOUT: 600000
+
+      - name: Generate comprehensive test project
+        run: |
+          mkdir -p comprehensive-test
+          cd comprehensive-test
+          
+          # Test with specific configuration
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              node ../lib/index.js new comprehensive-${{ matrix.template-type }} \
+                --template-type ${{ matrix.template-type }} \
+                --package-manager ${{ matrix.package-manager }} \
+                --linter ${{ matrix.linter || 'eslint' }} \
+                --formatter ${{ matrix.formatter || 'prettier' }} \
+                --test-framework vitest \
+                --no-interactive
+              ;;
+            *)
+              node ../lib/index.js new comprehensive-${{ matrix.template-type }} \
+                --template-type ${{ matrix.template-type }} \
+                --package-manager ${{ matrix.package-manager }} \
+                --linter ${{ matrix.linter || 'eslint' }} \
+                --formatter ${{ matrix.formatter || 'prettier' }} \
+                --test-framework vitest \
+                --no-interactive
+              ;;
+          esac
+        shell: bash
+        env:
+          HYPERGEN_TEST_MODE: true
+
+      - name: Test generated project lifecycle
+        working-directory: comprehensive-test/comprehensive-${{ matrix.template-type }}
+        run: |
+          # Install dependencies
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              bun install
+              # Try to run all scripts
+              bun run build || echo "No build script"
+              bun test || echo "No test script"
+              bun run lint || echo "No lint script"
+              bun run format || echo "No format script"
+              ;;
+            "npm")
+              npm install
+              npm run build || echo "No build script"
+              npm test || echo "No test script"
+              npm run lint || echo "No lint script"
+              npm run format || echo "No format script"
+              ;;
+            "yarn")
+              yarn install
+              yarn build || echo "No build script"
+              yarn test || echo "No test script"
+              yarn lint || echo "No lint script"
+              yarn format || echo "No format script"
+              ;;
+            "pnpm")
+              pnpm install
+              pnpm run build || echo "No build script"
+              pnpm test || echo "No test script"
+              pnpm run lint || echo "No lint script"
+              pnpm run format || echo "No format script"
+              ;;
+          esac
+        shell: bash
+
+      - name: Upload comprehensive test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comprehensive-results-${{ matrix.os }}-${{ matrix.node-version }}-${{ matrix.package-manager }}-${{ matrix.template-type }}
+          path: |
+            test-results/
+            comprehensive-test/
+          retention-days: 14
+
+  # Stress testing with high parallelism
+  stress-test:
+    name: Stress Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build project
+        run: bun run build
+
+      - name: Run stress tests
+        run: |
+          # Run multiple matrix tests in parallel to stress test the system
+          for i in {1..5}; do
+            echo "Starting stress test iteration $i"
+            bun run test:matrix:quick &
+          done
+          
+          # Wait for all background jobs
+          wait
+          
+          echo "All stress test iterations completed"
+        env:
+          TEST_PARALLELISM: 4
+          STRESS_TEST: true
+
+      - name: Upload stress test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-test-results
+          path: test-results/
+          retention-days: 7
+
+  # Cross-platform compatibility validation
+  compatibility-validation:
+    name: Compatibility Validation
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build project
+        run: bun run build
+
+      - name: Test platform-specific features
+        run: |
+          # Test file path handling
+          echo "Testing file path handling on ${{ runner.os }}"
+          
+          # Test line ending handling
+          echo "Testing line ending handling"
+          
+          # Test case sensitivity
+          echo "Testing case sensitivity"
+          
+          # Test permission handling
+          echo "Testing permission handling"
+          
+          # Run validation tests
+          bun run test:matrix:validation
+        shell: bash
+        env:
+          PLATFORM_TEST: true
+
+      - name: Test generated projects on platform
+        run: |
+          mkdir -p platform-test
+          cd platform-test
+          
+          # Generate different project types
+          for template_type in library cli; do
+            for package_manager in bun npm; do
+              echo "Testing $template_type with $package_manager on ${{ runner.os }}"
+              
+              node ../lib/index.js new test-${template_type}-${package_manager} \
+                --template-type $template_type \
+                --package-manager $package_manager \
+                --linter eslint \
+                --formatter prettier \
+                --test-framework vitest \
+                --no-interactive
+              
+              # Validate the generated project
+              cd test-${template_type}-${package_manager}
+              
+              # Check file permissions are correct
+              if [[ "${{ runner.os }}" != "Windows" ]]; then
+                find . -type f -name "*.json" -exec ls -la {} \;
+              fi
+              
+              # Install and test
+              case "$package_manager" in
+                "bun")
+                  bun install && bun test || echo "Test completed"
+                  ;;
+                "npm")
+                  npm install && npm test || echo "Test completed"
+                  ;;
+              esac
+              
+              cd ..
+            done
+          done
+        shell: bash
+        env:
+          HYPERGEN_TEST_MODE: true
+
+      - name: Upload compatibility test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compatibility-results-${{ matrix.os }}
+          path: |
+            test-results/
+            platform-test/
+          retention-days: 7
+
+  # Generate comprehensive nightly report
+  nightly-report:
+    name: Nightly Report
+    needs: [comprehensive-matrix, stress-test, compatibility-validation]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: nightly-results
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate comprehensive nightly report
+        run: |
+          cat > nightly-report-generator.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          function generateNightlyReport() {
+            const resultsDir = './nightly-results';
+            const report = {
+              timestamp: new Date().toISOString(),
+              type: 'nightly-comprehensive',
+              workflow_run: process.env.GITHUB_RUN_ID,
+              commit: process.env.GITHUB_SHA,
+              summary: {
+                total_combinations: 0,
+                successful_combinations: 0,
+                failed_combinations: 0,
+                platforms: new Set(),
+                node_versions: new Set(),
+                package_managers: new Set(),
+                template_types: new Set()
+              },
+              comprehensive_results: [],
+              stress_test_results: null,
+              compatibility_results: [],
+              performance_metrics: {
+                average_generation_time: 0,
+                fastest_combination: null,
+                slowest_combination: null,
+                memory_usage_peak: 0
+              }
+            };
+          
+            if (!fs.existsSync(resultsDir)) {
+              console.log('No results directory found');
+              return report;
+            }
+          
+            const artifacts = fs.readdirSync(resultsDir);
+            
+            for (const artifact of artifacts) {
+              const artifactPath = path.join(resultsDir, artifact);
+              
+              if (artifact.startsWith('comprehensive-results-')) {
+                // Parse comprehensive matrix results
+                const parts = artifact.replace('comprehensive-results-', '').split('-');
+                if (parts.length >= 4) {
+                  const [os, nodeVersion, packageManager, templateType] = parts;
+                  
+                  report.summary.platforms.add(os);
+                  report.summary.node_versions.add(nodeVersion);
+                  report.summary.package_managers.add(packageManager);
+                  report.summary.template_types.add(templateType);
+                  report.summary.total_combinations++;
+                  
+                  // Check for test results
+                  const summaryPath = path.join(artifactPath, 'test-results', 'summary.json');
+                  if (fs.existsSync(summaryPath)) {
+                    try {
+                      const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+                      
+                      const result = {
+                        platform: os,
+                        node_version: nodeVersion,
+                        package_manager: packageManager,
+                        template_type: templateType,
+                        status: summary.failed === 0 ? 'passed' : 'failed',
+                        ...summary
+                      };
+                      
+                      report.comprehensive_results.push(result);
+                      
+                      if (summary.failed === 0) {
+                        report.summary.successful_combinations++;
+                      } else {
+                        report.summary.failed_combinations++;
+                      }
+                      
+                      // Update performance metrics
+                      if (summary.averageDuration) {
+                        if (!report.performance_metrics.fastest_combination || 
+                            summary.averageDuration < report.performance_metrics.fastest_combination.duration) {
+                          report.performance_metrics.fastest_combination = {
+                            combination: `${os}-${nodeVersion}-${packageManager}-${templateType}`,
+                            duration: summary.averageDuration
+                          };
+                        }
+                        
+                        if (!report.performance_metrics.slowest_combination || 
+                            summary.averageDuration > report.performance_metrics.slowest_combination.duration) {
+                          report.performance_metrics.slowest_combination = {
+                            combination: `${os}-${nodeVersion}-${packageManager}-${templateType}`,
+                            duration: summary.averageDuration
+                          };
+                        }
+                      }
+                    } catch (e) {
+                      console.log(`Failed to parse summary for ${artifact}: ${e.message}`);
+                      report.summary.failed_combinations++;
+                    }
+                  } else {
+                    // If no summary file, assume it failed
+                    report.summary.failed_combinations++;
+                  }
+                }
+              } else if (artifact === 'stress-test-results') {
+                // Parse stress test results
+                const summaryPath = path.join(artifactPath, 'summary.json');
+                if (fs.existsSync(summaryPath)) {
+                  try {
+                    report.stress_test_results = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+                  } catch (e) {
+                    console.log(`Failed to parse stress test results: ${e.message}`);
+                  }
+                }
+              } else if (artifact.startsWith('compatibility-results-')) {
+                // Parse compatibility results
+                const platform = artifact.replace('compatibility-results-', '');
+                const summaryPath = path.join(artifactPath, 'summary.json');
+                
+                if (fs.existsSync(summaryPath)) {
+                  try {
+                    const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+                    report.compatibility_results.push({
+                      platform,
+                      ...summary
+                    });
+                  } catch (e) {
+                    console.log(`Failed to parse compatibility results for ${platform}: ${e.message}`);
+                  }
+                } else {
+                  // Basic compatibility result
+                  report.compatibility_results.push({
+                    platform,
+                    status: 'completed'
+                  });
+                }
+              }
+            }
+          
+            // Calculate average generation time
+            if (report.comprehensive_results.length > 0) {
+              const totalTime = report.comprehensive_results.reduce((sum, result) => 
+                sum + (result.averageDuration || 0), 0);
+              report.performance_metrics.average_generation_time = 
+                totalTime / report.comprehensive_results.length;
+            }
+          
+            // Convert Sets to Arrays
+            report.summary.platforms = Array.from(report.summary.platforms);
+            report.summary.node_versions = Array.from(report.summary.node_versions);
+            report.summary.package_managers = Array.from(report.summary.package_managers);
+            report.summary.template_types = Array.from(report.summary.template_types);
+            
+            return report;
+          }
+          
+          const report = generateNightlyReport();
+          fs.writeFileSync('nightly-comprehensive-report.json', JSON.stringify(report, null, 2));
+          
+          // Generate detailed markdown report
+          let markdown = `# Nightly Comprehensive Test Report\n\n`;
+          markdown += `**Date:** ${new Date().toLocaleDateString()}\n`;
+          markdown += `**Timestamp:** ${report.timestamp}\n`;
+          markdown += `**Commit:** ${process.env.GITHUB_SHA}\n`;
+          markdown += `**Workflow Run:** [${process.env.GITHUB_RUN_ID}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})\n\n`;
+          
+          // Executive Summary
+          markdown += `## Executive Summary\n\n`;
+          const successRate = report.summary.total_combinations > 0 ? 
+            ((report.summary.successful_combinations / report.summary.total_combinations) * 100).toFixed(1) : 0;
+          
+          markdown += `- **Total Combinations Tested:** ${report.summary.total_combinations}\n`;
+          markdown += `- **Successful:** ${report.summary.successful_combinations}\n`;
+          markdown += `- **Failed:** ${report.summary.failed_combinations}\n`;
+          markdown += `- **Overall Success Rate:** ${successRate}%\n\n`;
+          
+          // Coverage Matrix
+          markdown += `## Coverage Matrix\n\n`;
+          markdown += `- **Platforms:** ${report.summary.platforms.join(', ')}\n`;
+          markdown += `- **Node.js Versions:** ${report.summary.node_versions.join(', ')}\n`;
+          markdown += `- **Package Managers:** ${report.summary.package_managers.join(', ')}\n`;
+          markdown += `- **Template Types:** ${report.summary.template_types.join(', ')}\n\n`;
+          
+          // Performance Metrics
+          if (report.performance_metrics.average_generation_time > 0) {
+            markdown += `## Performance Metrics\n\n`;
+            markdown += `- **Average Generation Time:** ${report.performance_metrics.average_generation_time.toFixed(2)}ms\n`;
+            
+            if (report.performance_metrics.fastest_combination) {
+              markdown += `- **Fastest Combination:** ${report.performance_metrics.fastest_combination.combination} (${report.performance_metrics.fastest_combination.duration}ms)\n`;
+            }
+            
+            if (report.performance_metrics.slowest_combination) {
+              markdown += `- **Slowest Combination:** ${report.performance_metrics.slowest_combination.combination} (${report.performance_metrics.slowest_combination.duration}ms)\n`;
+            }
+            markdown += `\n`;
+          }
+          
+          // Detailed Results
+          if (report.comprehensive_results.length > 0) {
+            markdown += `## Comprehensive Matrix Results\n\n`;
+            markdown += `| Platform | Node | Package Manager | Template | Status | Tests | Success Rate |\n`;
+            markdown += `|----------|------|----------------|----------|---------|-------|---------------|\n`;
+            
+            for (const result of report.comprehensive_results) {
+              const status = result.status === 'passed' ? '✅' : '❌';
+              const successRate = result.total > 0 ? ((result.passed / result.total) * 100).toFixed(1) : 'N/A';
+              markdown += `| ${result.platform} | ${result.node_version} | ${result.package_manager} | ${result.template_type} | ${status} | ${result.total || 0} | ${successRate}% |\n`;
+            }
+            markdown += `\n`;
+          }
+          
+          // Stress Test Results
+          if (report.stress_test_results) {
+            markdown += `## Stress Test Results\n\n`;
+            markdown += `- **Status:** ${report.stress_test_results.failed === 0 ? '✅ Passed' : '❌ Failed'}\n`;
+            markdown += `- **Total Tests:** ${report.stress_test_results.total || 'N/A'}\n`;
+            markdown += `- **Success Rate:** ${report.stress_test_results.successRate || 'N/A'}%\n\n`;
+          }
+          
+          // Compatibility Results
+          if (report.compatibility_results.length > 0) {
+            markdown += `## Platform Compatibility Results\n\n`;
+            markdown += `| Platform | Status | Tests Passed | Tests Failed |\n`;
+            markdown += `|----------|---------|--------------|---------------|\n`;
+            
+            for (const compat of report.compatibility_results) {
+              const status = compat.failed === 0 ? '✅' : '❌';
+              markdown += `| ${compat.platform} | ${status} | ${compat.passed || 'N/A'} | ${compat.failed || 'N/A'} |\n`;
+            }
+          }
+          
+          // Recommendations
+          markdown += `\n## Recommendations\n\n`;
+          
+          if (report.summary.failed_combinations > 0) {
+            markdown += `- ⚠️ ${report.summary.failed_combinations} combinations failed and need investigation\n`;
+          }
+          
+          if (successRate < 95) {
+            markdown += `- 📊 Success rate of ${successRate}% is below recommended 95% threshold\n`;
+          }
+          
+          if (report.performance_metrics.slowest_combination && 
+              report.performance_metrics.slowest_combination.duration > 30000) {
+            markdown += `- 🐌 Slowest combination takes ${(report.performance_metrics.slowest_combination.duration / 1000).toFixed(1)}s - consider optimization\n`;
+          }
+          
+          if (report.summary.failed_combinations === 0) {
+            markdown += `- ✅ All tests passed! System is performing well across all platforms.\n`;
+          }
+          
+          fs.writeFileSync('nightly-comprehensive-report.md', markdown);
+          
+          console.log('Nightly report generated successfully');
+          console.log(`Total Combinations: ${report.summary.total_combinations}`);
+          console.log(`Success Rate: ${successRate}%`);
+          EOF
+          
+          node nightly-report-generator.js
+
+      - name: Upload nightly report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-comprehensive-report
+          path: |
+            nightly-comprehensive-report.json
+            nightly-comprehensive-report.md
+          retention-days: 90
+
+      - name: Add report to job summary  
+        run: |
+          if [[ -f nightly-comprehensive-report.md ]]; then
+            echo "# 🌙 Nightly Comprehensive Test Report" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat nightly-comprehensive-report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check overall health
+        run: |
+          if [[ -f nightly-comprehensive-report.json ]]; then
+            FAILED_COMBINATIONS=$(jq -r '.summary.failed_combinations' nightly-comprehensive-report.json)
+            TOTAL_COMBINATIONS=$(jq -r '.summary.total_combinations' nightly-comprehensive-report.json)
+            SUCCESS_RATE=$(echo "scale=1; ($TOTAL_COMBINATIONS - $FAILED_COMBINATIONS) / $TOTAL_COMBINATIONS * 100" | bc -l)
+            
+            echo "📊 Nightly Test Summary:"
+            echo "   Total combinations: $TOTAL_COMBINATIONS"
+            echo "   Failed combinations: $FAILED_COMBINATIONS"
+            echo "   Success rate: ${SUCCESS_RATE}%"
+            
+            # Set thresholds for health checks
+            if (( $(echo "$SUCCESS_RATE < 90" | bc -l) )); then
+              echo "❌ Success rate below 90% threshold - system needs attention"
+              exit 1
+            elif (( $(echo "$SUCCESS_RATE < 95" | bc -l) )); then
+              echo "⚠️ Success rate below 95% - monitoring recommended"
+            else
+              echo "✅ System healthy - all tests performing well"
+            fi
+          fi

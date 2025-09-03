@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Repository Structure Detection
+# Status: pending
+# Dependencies: 4
+# Priority: high
+# Description: Add detection for template.yml (single template) and hypergen.yml (multi-template) repository structures
+# Details:
+Implement repository contents inspection via GitHub Contents API. Validate template.yml and hypergen.yml structures and provide clear error messages for invalid configurations.
+
+# Test Strategy:
+Tests for both single and multi-template repository structures, validation error handling tests

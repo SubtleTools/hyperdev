@@ -1,0 +1,11 @@
+# Task ID: 11
+# Title: Template Configuration Schema
+# Status: pending
+# Dependencies: 5
+# Priority: medium
+# Description: Implement hypergen.yml configuration schema for multi-template repositories
+# Details:
+Define and implement the hypergen.yml schema with templates array, metadata, and validation. Support template path resolution and metadata extraction.
+
+# Test Strategy:
+Schema validation tests, configuration parsing tests, metadata extraction tests

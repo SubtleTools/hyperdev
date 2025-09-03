@@ -1,0 +1,87 @@
+{
+  "name": "@hypergen/monorepo-pack",
+  "version": "0.0.0-development",
+  "description": "Hypergen template package for creating Moon-based TypeScript monorepos with configurable tooling",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib/",
+    "_templates/",
+    "template.yml",
+    "hypergen-package.config.js",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "hypergen",
+    "hypergen-template",
+    "hypergen-package",
+    "template",
+    "monorepo",
+    "typescript",
+    "moon",
+    "moonrepo",
+    "code-generator",
+    "project-generator",
+    "workspace",
+    "build-system",
+    "tooling"
+  ],
+  "author": "Hypergen Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "build:lib": "tsc --build tsconfig.lib.json",
+    "clean": "rm -rf lib/ dist/",
+    "dev": "tsc --build --watch",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:matrix": "bun run scripts/run-matrix-tests.ts",
+    "test:matrix:validation": "bun run scripts/run-matrix-tests.ts --mode validation",
+    "test:matrix:quick": "bun run scripts/run-matrix-tests.ts --mode quick",
+    "test:matrix:full": "bun run scripts/run-matrix-tests.ts --mode full",
+    "test:matrix:benchmark": "bun run scripts/run-matrix-tests.ts --mode benchmark",
+    "test:matrix:ci": "bun run scripts/run-matrix-tests.ts --mode ci",
+    "validate:combinations": "bun run tests/matrix/combination-validator.ts",
+    "benchmark:performance": "bun run tests/matrix/performance-benchmark.ts",
+    "lint": "eslint src/ --ext .ts,.js",
+    "format": "prettier --write src/ _templates/",
+    "semantic-release": "semantic-release",
+    "semantic-release:dry": "semantic-release --dry-run",
+    "test:cli": "node scripts/test-cli-integration.js",
+    "prepublishOnly": "bun run clean && bun run build && bun run test:cli",
+    "prepack": "bun run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.0",
+    "@semantic-release/git": "^10.0.0",
+    "@types/node": "^20.0.0",
+    "semantic-release": "^22.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hypergen/hyperdev.git",
+    "directory": "packages/hypergen-monorepo"
+  },
+  "bugs": {
+    "url": "https://github.com/hypergen/hyperdev/issues"
+  },
+  "homepage": "https://github.com/hypergen/hyperdev/tree/main/packages/hypergen-monorepo#readme",
+  "hypergen": {
+    "type": "template-package",
+    "version": "8.0.0",
+    "templates": ["hypergen-monorepo"],
+    "commands": ["monorepo"],
+    "maturity": "stable",
+    "category": "project-structure"
+  }
+}

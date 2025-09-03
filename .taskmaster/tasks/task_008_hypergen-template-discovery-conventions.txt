@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Trust Command Implementation
+# Status: pending
+# Dependencies: 6
+# Priority: medium
+# Description: Add 'hypergen trust <creator>' command and trust listing functionality
+# Details:
+Implement CLI command to manually trust creators. Add listing of trusted creators and untrust functionality.
+
+# Test Strategy:
+CLI command tests, trust management workflow tests

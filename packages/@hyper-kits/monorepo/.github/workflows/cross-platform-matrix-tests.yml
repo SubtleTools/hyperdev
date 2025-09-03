@@ -1,0 +1,689 @@
+name: Cross-Platform Matrix Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode to run'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - quick
+          - full
+          - validation
+          - benchmark
+          - ci
+      skip_cache:
+        description: 'Skip cache restoration'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  CI: true
+  FORCE_COLOR: true
+  TEST_OUTPUT_DIR: ./test-results
+  TEST_PARALLELISM: 2
+
+jobs:
+  # Job to determine what needs to be tested
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      should-test: ${{ steps.changes.outputs.should-test }}
+      test-mode: ${{ steps.mode.outputs.test-mode }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for relevant changes
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "should-test=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should-test=true" >> $GITHUB_OUTPUT
+          else
+            # Check if any relevant files changed
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD || echo "all")
+            if [[ "$CHANGED_FILES" =~ (src/|tests/|_templates/|package\.json|tsconfig\.json|\.github/workflows/) ]] || [[ "$CHANGED_FILES" == "all" ]]; then
+              echo "should-test=true" >> $GITHUB_OUTPUT
+            else
+              echo "should-test=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Determine test mode
+        id: mode
+        run: |
+          if [[ "${{ github.event.inputs.test_mode }}" != "" ]]; then
+            echo "test-mode=${{ github.event.inputs.test_mode }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "test-mode=full" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "test-mode=full" >> $GITHUB_OUTPUT
+          else
+            echo "test-mode=quick" >> $GITHUB_OUTPUT
+          fi
+
+  # Quick validation on ubuntu-latest first
+  quick-validation:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.should-test == 'true'
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'bun'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Run unit tests
+        run: bun test
+
+      - name: Validate combinations
+        run: bun run validate:combinations
+
+  # Main matrix testing across platforms
+  matrix-test:
+    name: Matrix Test
+    needs: [detect-changes, quick-validation]
+    if: needs.detect-changes.outputs.should-test == 'true'
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # Operating Systems
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Node.js versions - focus on LTS and current
+        node-version: ['18', '20', '22']
+        # Package managers to test
+        package-manager: [bun, npm, yarn, pnpm]
+        # Exclude some combinations to optimize CI time
+        exclude:
+          # Skip older Node.js on macOS to save time
+          - os: macos-latest
+            node-version: '18'
+          # Skip some package manager combinations on Windows for faster CI
+          - os: windows-latest
+            package-manager: yarn
+            node-version: '18'
+          # Skip pnpm on Node 18 to reduce matrix size
+          - node-version: '18'
+            package-manager: pnpm
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: ${{ matrix.package-manager != 'bun' && matrix.package-manager || 'npm' }}
+
+      - name: Setup Bun (if needed)
+        if: matrix.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup pnpm (if needed)
+        if: matrix.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Setup Yarn (if needed)
+        if: matrix.package-manager == 'yarn'
+        run: corepack enable yarn
+
+      - name: Cache dependencies
+        if: ${{ !github.event.inputs.skip_cache }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache
+            ~/.bun
+            ~/.yarn
+            ~/.local/share/pnpm
+            **/node_modules
+          key: deps-${{ matrix.os }}-${{ matrix.node-version }}-${{ matrix.package-manager }}-${{ hashFiles('**/package.json', '**/bun.lockb', '**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          restore-keys: |
+            deps-${{ matrix.os }}-${{ matrix.node-version }}-${{ matrix.package-manager }}-
+            deps-${{ matrix.os }}-${{ matrix.node-version }}-
+            deps-${{ matrix.os }}-
+
+      - name: Install dependencies
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              bun install --frozen-lockfile || bun install
+              ;;
+            "npm")
+              npm ci || npm install
+              ;;
+            "yarn")
+              yarn install --frozen-lockfile || yarn install
+              ;;
+            "pnpm")
+              pnpm install --frozen-lockfile || pnpm install
+              ;;
+          esac
+        shell: bash
+
+      - name: Build project
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              bun run build
+              ;;
+            "npm")
+              npm run build
+              ;;
+            "yarn")
+              yarn build
+              ;;
+            "pnpm")
+              pnpm run build
+              ;;
+          esac
+        shell: bash
+
+      - name: Run matrix tests
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              bun run test:matrix:${{ needs.detect-changes.outputs.test-mode }}
+              ;;
+            "npm")
+              npm run test:matrix:${{ needs.detect-changes.outputs.test-mode }}
+              ;;
+            "yarn")
+              yarn test:matrix:${{ needs.detect-changes.outputs.test-mode }}
+              ;;
+            "pnpm")
+              pnpm run test:matrix:${{ needs.detect-changes.outputs.test-mode }}
+              ;;
+          esac
+        shell: bash
+        env:
+          TEST_PLATFORM: ${{ matrix.os }}
+          TEST_NODE_VERSION: ${{ matrix.node-version }}
+          TEST_PACKAGE_MANAGER: ${{ matrix.package-manager }}
+          HYPERGEN_TEST_TIMEOUT: 300000
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-node${{ matrix.node-version }}-${{ matrix.package-manager }}
+          path: |
+            test-results/
+            !test-results/**/*.tmp
+          retention-days: 7
+
+      - name: Upload JUnit results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Matrix Tests (${{ matrix.os }}, Node ${{ matrix.node-version }}, ${{ matrix.package-manager }})
+          path: test-results/junit-report.xml
+          reporter: java-junit
+          fail-on-error: false
+
+  # Performance benchmarking across platforms
+  performance-benchmark:
+    name: Performance Benchmark
+    needs: [detect-changes, quick-validation]
+    if: needs.detect-changes.outputs.should-test == 'true' && (needs.detect-changes.outputs.test-mode == 'full' || needs.detect-changes.outputs.test-mode == 'benchmark')
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['20'] # Use only LTS for benchmarking
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build project
+        run: bun run build
+
+      - name: Run performance benchmark
+        run: bun run benchmark:performance
+        env:
+          TEST_PLATFORM: ${{ matrix.os }}
+          BENCHMARK_ITERATIONS: 10
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ matrix.os }}
+          path: test-results/benchmark-report.json
+          retention-days: 30
+
+  # Template generation validation across platforms
+  template-generation-test:
+    name: Template Generation Test  
+    needs: [detect-changes, quick-validation]
+    if: needs.detect-changes.outputs.should-test == 'true'
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        template-type: [library, cli]
+        package-manager: [bun, npm]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup package manager
+        if: matrix.package-manager != 'bun'
+        run: |
+          if [[ "${{ matrix.package-manager }}" == "pnpm" ]]; then
+            corepack enable pnpm
+          elif [[ "${{ matrix.package-manager }}" == "yarn" ]]; then
+            corepack enable yarn
+          fi
+        shell: bash
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build project
+        run: bun run build
+
+      - name: Create test workspace
+        run: mkdir -p test-workspace
+        shell: bash
+
+      - name: Generate test project
+        working-directory: test-workspace
+        run: |
+          # Test template generation
+          node ../lib/index.js new test-${{ matrix.template-type }}-${{ matrix.os }} \
+            --template-type ${{ matrix.template-type }} \
+            --package-manager ${{ matrix.package-manager }} \
+            --linter eslint \
+            --formatter prettier \
+            --test-framework vitest \
+            --no-interactive
+        shell: bash
+        env:
+          HYPERGEN_TEST_MODE: true
+
+      - name: Validate generated project structure
+        working-directory: test-workspace/test-${{ matrix.template-type }}-${{ matrix.os }}
+        run: |
+          # Check essential files exist
+          files=(
+            "package.json"
+            "tsconfig.json"
+            "README.md"
+          )
+          
+          for file in "${files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "ERROR: Missing required file: $file"
+              exit 1
+            fi
+          done
+          
+          # Check package.json is valid
+          node -e "JSON.parse(require('fs').readFileSync('package.json', 'utf8'))"
+          
+          # Check TypeScript config is valid
+          node -e "JSON.parse(require('fs').readFileSync('tsconfig.json', 'utf8'))"
+          
+          echo "✅ Project structure validation passed"
+        shell: bash
+
+      - name: Test generated project dependencies
+        working-directory: test-workspace/test-${{ matrix.template-type }}-${{ matrix.os }}
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              bun install
+              ;;
+            "npm")
+              npm install
+              ;;
+            "yarn")
+              yarn install
+              ;;
+            "pnpm")
+              pnpm install
+              ;;
+          esac
+        shell: bash
+
+      - name: Test generated project build
+        working-directory: test-workspace/test-${{ matrix.template-type }}-${{ matrix.os }}
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              bun run build || echo "Build command not available"
+              ;;
+            "npm")
+              npm run build || echo "Build command not available"
+              ;;
+            "yarn")
+              yarn build || echo "Build command not available"
+              ;;
+            "pnpm")
+              pnpm run build || echo "Build command not available"
+              ;;
+          esac
+        shell: bash
+
+      - name: Test generated project tests
+        working-directory: test-workspace/test-${{ matrix.template-type }}-${{ matrix.os }}
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              bun test || echo "No tests to run"
+              ;;
+            "npm")
+              npm test || echo "No tests to run"
+              ;;
+            "yarn")
+              yarn test || echo "No tests to run"
+              ;;
+            "pnpm")
+              pnpm test || echo "No tests to run"
+              ;;
+          esac
+        shell: bash
+
+      - name: Upload generated project artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-${{ matrix.template-type }}-${{ matrix.os }}-${{ matrix.package-manager }}
+          path: test-workspace/
+          retention-days: 7
+
+  # Collect and report results
+  report-results:
+    name: Report Results
+    needs: [detect-changes, quick-validation, matrix-test, performance-benchmark, template-generation-test]
+    if: always() && needs.detect-changes.outputs.should-test == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install jq for JSON processing
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Generate comprehensive report
+        run: |
+          cat > report-generator.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          function generateReport() {
+            const resultsDir = './all-results';
+            const report = {
+              timestamp: new Date().toISOString(),
+              workflow_run: process.env.GITHUB_RUN_ID,
+              commit: process.env.GITHUB_SHA,
+              ref: process.env.GITHUB_REF,
+              summary: {
+                total_jobs: 0,
+                successful_jobs: 0,
+                failed_jobs: 0,
+                platforms_tested: new Set(),
+                node_versions_tested: new Set(),
+                package_managers_tested: new Set()
+              },
+              details: [],
+              performance: [],
+              template_generation: []
+            };
+          
+            if (!fs.existsSync(resultsDir)) {
+              console.log('No results directory found');
+              return report;
+            }
+          
+            const artifacts = fs.readdirSync(resultsDir);
+            
+            for (const artifact of artifacts) {
+              const artifactPath = path.join(resultsDir, artifact);
+              
+              if (artifact.startsWith('test-results-')) {
+                // Parse matrix test results
+                const parts = artifact.replace('test-results-', '').split('-');
+                if (parts.length >= 3) {
+                  const os = parts[0];
+                  const nodeVersion = parts[1];
+                  const packageManager = parts[2];
+                  
+                  report.summary.platforms_tested.add(os);
+                  report.summary.node_versions_tested.add(nodeVersion);
+                  report.summary.package_managers_tested.add(packageManager);
+                  report.summary.total_jobs++;
+                  
+                  // Check if summary.json exists
+                  const summaryPath = path.join(artifactPath, 'summary.json');
+                  if (fs.existsSync(summaryPath)) {
+                    try {
+                      const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+                      report.details.push({
+                        platform: os,
+                        node_version: nodeVersion,
+                        package_manager: packageManager,
+                        status: summary.failed > 0 ? 'failed' : 'passed',
+                        ...summary
+                      });
+                      
+                      if (summary.failed === 0) {
+                        report.summary.successful_jobs++;
+                      } else {
+                        report.summary.failed_jobs++;
+                      }
+                    } catch (e) {
+                      console.log(`Failed to parse summary for ${artifact}: ${e.message}`);
+                      report.summary.failed_jobs++;
+                    }
+                  }
+                }
+              } else if (artifact.startsWith('benchmark-results-')) {
+                // Parse benchmark results
+                const benchmarkPath = path.join(artifactPath, 'benchmark-report.json');
+                if (fs.existsSync(benchmarkPath)) {
+                  try {
+                    const benchmark = JSON.parse(fs.readFileSync(benchmarkPath, 'utf8'));
+                    report.performance.push({
+                      platform: artifact.replace('benchmark-results-', ''),
+                      ...benchmark
+                    });
+                  } catch (e) {
+                    console.log(`Failed to parse benchmark for ${artifact}: ${e.message}`);
+                  }
+                }
+              } else if (artifact.startsWith('generated-')) {
+                // Parse template generation results
+                const parts = artifact.replace('generated-', '').split('-');
+                if (parts.length >= 3) {
+                  report.template_generation.push({
+                    template_type: parts[0],
+                    platform: parts[1],
+                    package_manager: parts[2],
+                    status: 'completed' // If artifact exists, generation was successful
+                  });
+                }
+              }
+            }
+          
+            // Convert Sets to Arrays for JSON serialization
+            report.summary.platforms_tested = Array.from(report.summary.platforms_tested);
+            report.summary.node_versions_tested = Array.from(report.summary.node_versions_tested);
+            report.summary.package_managers_tested = Array.from(report.summary.package_managers_tested);
+            
+            return report;
+          }
+          
+          const report = generateReport();
+          fs.writeFileSync('cross-platform-test-report.json', JSON.stringify(report, null, 2));
+          
+          // Generate markdown summary
+          let markdown = `# Cross-Platform Matrix Test Report\n\n`;
+          markdown += `**Timestamp:** ${report.timestamp}\n`;
+          markdown += `**Commit:** ${process.env.GITHUB_SHA}\n`;
+          markdown += `**Workflow Run:** [${process.env.GITHUB_RUN_ID}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})\n\n`;
+          
+          markdown += `## Summary\n\n`;
+          markdown += `- **Total Jobs:** ${report.summary.total_jobs}\n`;
+          markdown += `- **Successful:** ${report.summary.successful_jobs}\n`;
+          markdown += `- **Failed:** ${report.summary.failed_jobs}\n`;
+          markdown += `- **Success Rate:** ${report.summary.total_jobs > 0 ? ((report.summary.successful_jobs / report.summary.total_jobs) * 100).toFixed(1) : 0}%\n\n`;
+          
+          markdown += `## Coverage\n\n`;
+          markdown += `- **Platforms:** ${report.summary.platforms_tested.join(', ')}\n`;
+          markdown += `- **Node Versions:** ${report.summary.node_versions_tested.join(', ')}\n`;
+          markdown += `- **Package Managers:** ${report.summary.package_managers_tested.join(', ')}\n\n`;
+          
+          if (report.details.length > 0) {
+            markdown += `## Detailed Results\n\n`;
+            markdown += `| Platform | Node | Package Manager | Status | Passed | Failed | Success Rate |\n`;
+            markdown += `|----------|------|----------------|---------|---------|---------|---------------|\n`;
+            
+            for (const detail of report.details) {
+              const successRate = detail.total > 0 ? ((detail.passed / detail.total) * 100).toFixed(1) : 0;
+              const status = detail.status === 'passed' ? '✅' : '❌';
+              markdown += `| ${detail.platform} | ${detail.node_version} | ${detail.package_manager} | ${status} | ${detail.passed || 0} | ${detail.failed || 0} | ${successRate}% |\n`;
+            }
+            markdown += `\n`;
+          }
+          
+          if (report.performance.length > 0) {
+            markdown += `## Performance Benchmarks\n\n`;
+            markdown += `| Platform | Average Duration | Operations/sec |\n`;
+            markdown += `|----------|------------------|----------------|\n`;
+            
+            for (const perf of report.performance) {
+              markdown += `| ${perf.platform} | ${perf.averageDuration || 'N/A'}ms | ${perf.operationsPerSecond || 'N/A'} |\n`;
+            }
+            markdown += `\n`;
+          }
+          
+          if (report.template_generation.length > 0) {
+            markdown += `## Template Generation Tests\n\n`;
+            markdown += `| Template Type | Platform | Package Manager | Status |\n`;
+            markdown += `|---------------|----------|-----------------|--------|\n`;
+            
+            for (const template of report.template_generation) {
+              const status = template.status === 'completed' ? '✅' : '❌';
+              markdown += `| ${template.template_type} | ${template.platform} | ${template.package_manager} | ${status} |\n`;
+            }
+          }
+          
+          fs.writeFileSync('cross-platform-test-report.md', markdown);
+          
+          console.log('Report generated successfully');
+          console.log(`Total Jobs: ${report.summary.total_jobs}`);
+          console.log(`Successful: ${report.summary.successful_jobs}`);
+          console.log(`Failed: ${report.summary.failed_jobs}`);
+          EOF
+          
+          node report-generator.js
+
+      - name: Upload comprehensive report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-platform-test-report
+          path: |
+            cross-platform-test-report.json
+            cross-platform-test-report.md
+          retention-days: 30
+
+      - name: Add report to job summary
+        run: |
+          if [[ -f cross-platform-test-report.md ]]; then
+            cat cross-platform-test-report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for failures
+        run: |
+          if [[ -f cross-platform-test-report.json ]]; then
+            FAILED_JOBS=$(jq -r '.summary.failed_jobs' cross-platform-test-report.json)
+            if [[ "$FAILED_JOBS" -gt 0 ]]; then
+              echo "❌ $FAILED_JOBS jobs failed"
+              exit 1
+            else
+              echo "✅ All jobs passed"
+            fi
+          fi

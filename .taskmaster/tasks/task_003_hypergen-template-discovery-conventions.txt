@@ -1,0 +1,11 @@
+# Task ID: 3
+# Title: Scoped Package Support
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Add comprehensive support for scoped packages (@username/hypergen-*, @hypergen/template-*)
+# Details:
+Extend detection logic to properly handle scoped packages. Ensure template resolution works with scoped package names.
+
+# Test Strategy:
+Unit tests for scoped package detection, integration tests with actual scoped packages

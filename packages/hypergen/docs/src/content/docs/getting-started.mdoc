@@ -1,0 +1,468 @@
+---
+title: Getting Started with Hypergen V8
+description: Learn how to install and use Hypergen V8's template system with LiquidJS, TypeScript actions, and template discovery
+---
+
+# Getting Started with Hypergen V8
+
+Hypergen V8 is a modern, scalable code generator with LiquidJS templating, TypeScript actions, and intelligent template discovery. This guide walks you through installation, basic usage, and key features.
+
+## Installation
+
+```bash
+# Install with bun (recommended)
+bun add hypergen
+
+# Or with npm
+npm install hypergen
+
+# Or use globally
+bun add -g hypergen
+```
+
+## Quick Start
+
+### 1. Basic Template Generation
+
+```bash
+# Generate using a template
+hypergen <generator> --name=MyProject
+
+# Example with parameters
+hypergen react-component --name=Button --typescript=true
+```
+
+### 2. Explore Available Commands
+
+```bash
+# List all available actions
+hypergen action list
+
+# Get help for a specific action
+hypergen action info <action-name>
+
+# Discover templates from NPM/GitHub
+hypergen discover react
+
+# Validate a template
+hypergen template validate <template-path>
+```
+
+## Core Features
+
+### 🚀 Template System
+
+#### Template.yml Configuration
+Rich variable definitions with validation:
+
+```yaml
+# template.yml
+name: react-component
+description: Create React components with TypeScript
+version: 1.0.0
+
+variables:
+  name:
+    type: string
+    required: true
+    pattern: ^[A-Z][a-zA-Z0-9]*$
+    description: Component name in PascalCase
+  
+  typescript:
+    type: boolean
+    default: true
+    description: Generate TypeScript component
+  
+  styling:
+    type: enum
+    values: [css, scss, styled-components, emotion]
+    default: css
+    description: Styling approach
+```
+
+#### LiquidJS Templates
+Modern templating with rich filters:
+
+```liquid
+---
+to: src/components/{{ name }}.{{ typescript | ternary: "tsx", "jsx" }}
+skip_if: {{ name == "Skip" }}
+---
+import React from 'react';
+{% if typescript %}
+interface {{ name }}Props {
+  // Component props
+}
+{% endif %}
+
+export const {{ name }}{% if typescript %}: React.FC<{{ name }}Props>{% endif %} = (props) => {
+  return <div>Hello from {{ name | humanize }}!</div>;
+};
+```
+
+#### Template Composition
+Inherit from remote templates:
+
+```yaml
+# template.yml with composition
+composition:
+  base: https://github.com/user/base-component
+  includes:
+    - template: typescript-types
+      condition: typescript == true
+    - template: styled-props  
+      condition: styling == "styled-components"
+```
+
+### ⚡ TypeScript Actions
+
+Modern decorator-based actions:
+
+```typescript
+// actions.ts
+import { action } from 'hypergen/actions';
+import type { ActionContext, ActionResult } from 'hypergen/types';
+
+async function createComponent(context: ActionContext): Promise<ActionResult> {
+  const { args, utils, logger } = context;
+  
+  // Create directory
+  await utils.createDirectory(`src/components`);
+  
+  // Log success
+  logger.info(`✅ Created component ${args.name}`);
+  
+  return { success: true };
+}
+
+// Apply decorator (Bun-compatible syntax)
+const decoratedAction = action({
+  name: 'create-component',
+  description: 'Create a React component with TypeScript',
+  category: 'react',
+  parameters: {
+    name: { type: 'string', required: true },
+    typescript: { type: 'boolean', default: true }
+  }
+})(createComponent);
+
+export { decoratedAction as createComponent };
+```
+
+### 🔍 Template Discovery
+
+Find templates from multiple sources:
+
+```bash
+# Discover from NPM
+hypergen discover react-component
+
+# Search GitHub topics
+hypergen discover --source=github "hypergen-template"
+
+# List local templates
+hypergen template list
+```
+
+**NPM Conventions**:
+- `hypergen-*` (e.g., `hypergen-react`)
+- `@user/hypergen-*` (e.g., `@company/hypergen-templates`)
+- `@hypergen/template-*` (official templates)
+
+**GitHub Discovery**:
+- Repositories with `hypergen-template` topic
+- Must contain `template.yml` or `hypergen.yml`
+
+### 🛡️ Security & Trust
+
+Safe template execution with consent:
+
+```bash
+# Trust a creator (one-time setup)
+hypergen trust @username
+
+# Trust an organization
+hypergen trust @company
+
+# View trusted creators
+hypergen trust list
+```
+
+When using untrusted templates, Hypergen prompts for explicit consent before execution.
+
+## Template Structure
+
+### Single Template Structure
+```
+my-generator/
+├── template.yml          # Configuration and variables
+├── component.liquid.t    # LiquidJS template
+└── actions.ts           # TypeScript actions (optional)
+```
+
+### Multi-Template Structure  
+```
+my-generator/
+├── template.yml          # Generator configuration
+├── templates/
+│   ├── component.liquid.t
+│   ├── test.liquid.t
+│   └── story.liquid.t
+└── actions.ts           # TypeScript actions
+```
+
+## Configuration
+
+### Project Configuration
+
+Create `hypergen.config.js` in your project root:
+
+```javascript
+// hypergen.config.js
+export default {
+  // Template directories
+  templates: ['_templates', 'generators'],
+  
+  // Template discovery
+  discovery: {
+    sources: ['npm', 'github', 'local'],
+    cacheTimeout: 3600 // seconds
+  },
+  
+  // Security settings
+  trust: {
+    autoTrustLocal: true,
+    promptForRemote: true
+  },
+  
+  // Template engine preferences
+  engines: {
+    default: 'liquidjs',
+    fallback: 'ejs'
+  }
+};
+```
+
+### Template-Level Configuration
+
+Enhanced `template.yml` with validation:
+
+```yaml
+name: full-stack-app
+description: Create a full-stack application
+version: 2.1.0
+author: "@company"
+
+variables:
+  name:
+    type: string
+    required: true
+    pattern: ^[a-z][a-z0-9-]*$
+    description: Project name (kebab-case)
+  
+  framework:
+    type: enum  
+    values: [react, vue, svelte, angular]
+    default: react
+    description: Frontend framework
+  
+  database:
+    type: array
+    values: [postgres, mysql, mongodb, sqlite]
+    default: [postgres]
+    description: Database systems
+  
+  features:
+    type: object
+    properties:
+      auth: { type: boolean, default: true }
+      api: { type: boolean, default: true }
+      testing: { type: boolean, default: false }
+    description: Feature flags
+
+composition:
+  includes:
+    - template: database-setup
+      condition: database.length > 0
+    - template: auth-system
+      condition: features.auth == true
+
+lifecycle:
+  pre: [validate-dependencies]
+  post: [install-packages, format-code]
+```
+
+## CLI Commands Reference
+
+### Template Operations
+```bash
+hypergen <generator> [options]          # Generate using template
+hypergen template validate <path>       # Validate template configuration
+hypergen template list [directory]      # List available templates
+```
+
+### Action System
+```bash
+hypergen action list                     # List all available actions
+hypergen action info <action>           # Show action details and parameters
+hypergen <action> [options]            # Execute specific action
+```
+
+### Discovery & Trust
+```bash
+hypergen discover [search-term]         # Find templates from all sources
+hypergen trust <creator>               # Trust template creator
+hypergen trust list                    # Show trusted creators
+hypergen url resolve <url>             # Resolve and cache URL templates
+```
+
+### System & Help
+```bash
+hypergen system status                  # Show configuration and status
+hypergen help [command]               # Comprehensive help system
+```
+
+## Development Workflow
+
+### 1. Create a Template
+
+```bash
+mkdir _templates/my-generator
+cd _templates/my-generator
+```
+
+Create `template.yml`:
+```yaml
+name: my-generator
+description: My custom generator
+version: 1.0.0
+
+variables:
+  name:
+    type: string
+    required: true
+```
+
+Create `component.liquid.t`:
+```liquid
+---
+to: src/{{ name | kebabCase }}.ts
+---
+// Generated {{ name }}
+export class {{ name | pascalCase }} {
+  constructor(private name: string = '{{ name }}') {}
+}
+```
+
+### 2. Test Your Template
+
+```bash
+# Validate template configuration
+hypergen template validate _templates/my-generator
+
+# Test generation
+hypergen my-generator --name="TestComponent"
+```
+
+### 3. Add TypeScript Actions
+
+Create `actions.ts`:
+```typescript
+async function myGenerator(context: ActionContext): Promise<ActionResult> {
+  const { args, utils, logger } = context;
+  
+  // Custom logic here
+  await utils.createDirectory(`src/${args.name.toLowerCase()}`);
+  logger.info(`Generated ${args.name} successfully!`);
+  
+  return { success: true };
+}
+
+const decoratedAction = action({
+  name: 'my-generator',
+  description: 'Generate custom component',
+  parameters: {
+    name: { type: 'string', required: true }
+  }
+})(myGenerator);
+
+export { decoratedAction as myGenerator };
+```
+
+### 4. Advanced Features
+
+Use template composition:
+```yaml
+# template.yml
+composition:
+  base: https://github.com/company/base-template
+  includes:
+    - template: typescript-setup
+      condition: typescript == true
+```
+
+## Migration from Hygen/V7
+
+Hypergen V8 is fully backward compatible:
+
+### ✅ No Breaking Changes
+- Existing `.ejs.t` templates work unchanged
+- Current frontmatter syntax supported
+- Same CLI command structure
+- Existing `_templates` directories recognized
+
+### ✅ Gradual Adoption
+- Start using LiquidJS templates alongside EJS
+- Add `template.yml` to existing generators
+- Create TypeScript actions when needed
+- Enable template discovery gradually
+
+### Migration Example
+
+**Before (Hygen/V7)**:
+```
+_templates/
+  react/
+    component/
+      component.ejs.t    # EJS template with frontmatter
+```
+
+**After (V8 Enhanced)**:
+```  
+_templates/
+  react/
+    component/
+      template.yml       # Rich configuration (new)
+      component.liquid.t # LiquidJS template (new)
+      component.ejs.t    # EJS template (still works)
+      actions.ts         # TypeScript actions (new)
+```
+
+## Performance
+
+Hypergen V8 is optimized for speed:
+
+- **Startup Time**: <100ms for common operations
+- **Template Resolution**: <500ms cached, <2s uncached
+- **LiquidJS Rendering**: 4x faster than EJS
+- **Discovery Caching**: Intelligent multi-level caching
+- **Lazy Loading**: Components loaded only when needed
+
+## Next Steps
+
+### Explore Advanced Features
+- [Template Composition Guide](./advanced-composition) - Deep dive into composition
+- [V8 Features Overview](./v8-features) - Complete feature reference
+
+### Community Templates
+- Browse NPM for `hypergen-*` packages
+- Explore GitHub topics: `hypergen-template`  
+- Check official `@hypergen/template-*` packages
+
+### Get Help
+- Built-in help: `hypergen help`
+- Action information: `hypergen action info <name>`
+- System status: `hypergen system status`
+- GitHub Issues: [Report bugs](https://github.com/svallory/hypergen/issues)
+
+Happy generating with Hypergen V8! 🚀

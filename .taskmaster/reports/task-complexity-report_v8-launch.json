@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "analysis_date": "2025-08-26T21:01:00Z",
+    "tag": "v8-launch",
+    "threshold": 5,
+    "total_tasks": 8,
+    "tasks_analyzed": 8,
+    "method": "manual_assessment"
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Enhanced Template.yml Configuration System",
+      "complexity_score": 9,
+      "complexity_factors": [
+        "Multiple new variable types (array, object, file, directory)",
+        "Pattern matching and constraint validation",
+        "Template composition and inheritance",
+        "Lifecycle hooks system",
+        "Backward compatibility requirements"
+      ],
+      "recommended_subtasks": 8,
+      "expansion_recommended": true,
+      "priority": "high"
+    },
+    {
+      "id": 2,
+      "title": "Complete CLI Commands Implementation",
+      "complexity_score": 7,
+      "complexity_factors": [
+        "Multiple new CLI commands",
+        "Command validation and error handling",
+        "Help system enhancement",
+        "Integration with existing CLI structure"
+      ],
+      "recommended_subtasks": 6,
+      "expansion_recommended": true,
+      "priority": "high"
+    },
+    {
+      "id": 3,
+      "title": "File-based Routing System",
+      "complexity_score": 8,
+      "complexity_factors": [
+        "New routing algorithm design",
+        "Dynamic path interpolation",
+        "Convention over configuration implementation",
+        "Integration with template discovery"
+      ],
+      "recommended_subtasks": 7,
+      "expansion_recommended": true,
+      "priority": "medium"
+    },
+    {
+      "id": 4,
+      "title": "Developer Tools and Template Authoring",
+      "complexity_score": 7,
+      "complexity_factors": [
+        "Multiple tool types (validation, linting, preview)",
+        "Interactive development workflow",
+        "IDE integration considerations",
+        "Testing framework development"
+      ],
+      "recommended_subtasks": 6,
+      "expansion_recommended": true,
+      "priority": "medium"
+    },
+    {
+      "id": 5,
+      "title": "Migration Tools and Utilities",
+      "complexity_score": 6,
+      "complexity_factors": [
+        "Format conversion algorithms",
+        "Migration validation",
+        "Backward compatibility layer",
+        "Bulk conversion scripts"
+      ],
+      "recommended_subtasks": 5,
+      "expansion_recommended": true,
+      "priority": "low"
+    },
+    {
+      "id": 6,
+      "title": "Performance Optimizations and Scalability",
+      "complexity_score": 7,
+      "complexity_factors": [
+        "Caching mechanisms",
+        "Parallel processing implementation",
+        "Memory optimization",
+        "Performance benchmarking"
+      ],
+      "recommended_subtasks": 6,
+      "expansion_recommended": true,
+      "priority": "medium"
+    },
+    {
+      "id": 7,
+      "title": "Testing and Quality Assurance",
+      "complexity_score": 8,
+      "complexity_factors": [
+        "Comprehensive test suite creation",
+        "Multiple test types (unit, integration, e2e)",
+        "99%+ coverage requirement",
+        "CI/CD integration"
+      ],
+      "recommended_subtasks": 7,
+      "expansion_recommended": true,
+      "priority": "high"
+    },
+    {
+      "id": 8,
+      "title": "Documentation and User Guides",
+      "complexity_score": 6,
+      "complexity_factors": [
+        "Multiple documentation types",
+        "Example creation and validation",
+        "Tutorial development",
+        "Documentation site updates"
+      ],
+      "recommended_subtasks": 5,
+      "expansion_recommended": true,
+      "priority": "high"
+    }
+  ],
+  "summary": {
+    "high_complexity_tasks": 8,
+    "tasks_needing_expansion": 8,
+    "average_complexity": 7.25,
+    "total_recommended_subtasks": 50
+  }
+}

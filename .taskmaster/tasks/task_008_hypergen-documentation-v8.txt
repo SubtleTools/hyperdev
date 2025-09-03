@@ -1,0 +1,56 @@
+# Task ID: 8
+# Title: PHASE 3: Advanced Features Documentation
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Document the advanced features that are implemented but undocumented: trust system, performance optimization, GitHub integration
+# Details:
+Hypergen has several sophisticated features that are fully implemented but lack documentation. These are competitive advantages that users don't know about.
+
+**Advanced Features to Document:**
+
+1. **Trust System** (src/trust/)
+   - Security model for external templates
+   - Trust CLI commands and workflows  
+   - Configuration and policy management
+   - Integration with npm packages and GitHub repos
+
+2. **Performance & Caching** (src/caching/, src/performance/)
+   - Multi-level caching system
+   - Template store optimization
+   - Performance monitoring tools
+   - Cache management and debugging
+
+3. **GitHub Integration** (src/discovery/github-*)
+   - Using GitHub repositories as template sources
+   - Access pattern parsing and authentication
+   - Repository structure detection
+   - Private repository support
+
+4. **CLI Automation & Scripting**
+   - Batch operations and scripting patterns
+   - CI/CD integration strategies
+   - Configuration management
+   - Environment-specific workflows
+
+5. **Developer Tools** (src/developer-tools/)
+   - Template validation and linting
+   - Preview mode for testing
+   - IDE integration capabilities
+   - Testing framework integration
+
+**Documentation Structure:**
+- guides/advanced-features/ directory
+- Each feature gets comprehensive guide
+- Security considerations prominently featured
+- Enterprise usage patterns included
+- Integration examples with common tools
+
+**Success Criteria:**
+- Advanced users can configure and use all features
+- Security implications clearly explained
+- Enterprise patterns well documented
+- Integration guides work with popular tools
+
+# Test Strategy:
+

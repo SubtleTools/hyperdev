@@ -1,0 +1,46 @@
+# Task ID: 3
+# Title: PHASE 1: npm Package Template System Documentation
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Comprehensively document the working npm package template system - Hypergen's most important undocumented feature
+# Details:
+The npm package template system is fully implemented and working but barely documented. This is a CRITICAL gap since it's a core differentiating feature.
+
+**What needs to be documented:**
+
+**Core System:**
+- How `hypergen starlight` resolves to `hypergen-starlight` npm package
+- Global template caching in `~/.hypergen/templates/`
+- Version management and automatic updates
+- Cache directory structure and management
+
+**User Workflows:**
+- Discovering npm template packages
+- Using templates with `hypergen <package-name> [options]`
+- Working with versioned templates `hypergen starlight@1.2.0`
+- Understanding preset system integration
+
+**Template Publisher Guide:**
+- Publishing templates to npm
+- Package naming conventions (hypergen-*, @scope/hypergen-*)
+- Template structure requirements
+- Version management strategies
+- preset configuration in template.yml
+
+**Examples to Document:**
+- `hypergen starlight --preset=full-featured --projectFolder=my-docs`
+- Cache management commands
+- Version-specific usage
+- Custom npm registries
+
+**Files to Create/Update:**
+- guides/sharing-templates/npm-packages.mdoc
+- getting-started/finding-templates.mdoc
+- reference/cli/action.mdoc (npm resolution)
+- examples/workflows/npm-publishing.mdoc
+
+This is the highest priority documentation work since this feature works perfectly but users don't know about it.
+
+# Test Strategy:
+

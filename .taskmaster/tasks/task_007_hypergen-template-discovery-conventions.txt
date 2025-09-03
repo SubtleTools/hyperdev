@@ -1,0 +1,11 @@
+# Task ID: 7
+# Title: Trust Prompt System
+# Status: pending
+# Dependencies: 6
+# Priority: high
+# Description: Add trust prompts and confirmation flows for untrusted creators
+# Details:
+Implement 'Do you want to trust this creator?' prompts with clear explanations. Show creator information and security implications.
+
+# Test Strategy:
+User interface tests, prompt flow validation, security messaging tests

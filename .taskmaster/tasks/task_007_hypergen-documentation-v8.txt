@@ -1,0 +1,51 @@
+# Task ID: 7
+# Title: PHASE 2: Complete CLI Command Reference
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Document all 18+ CLI commands with complete option reference based on actual implementation
+# Details:
+Based on src/cli/cli.ts analysis, Hypergen has 18+ CLI commands that need complete documentation. Currently most are undocumented.
+
+**Commands to Document:**
+
+**Core Commands:**
+- `hypergen action <name>` - Execute template actions (including npm packages)
+- `hypergen <npm-package>` - Direct npm template execution
+- `hypergen discover` - Find available generators
+- `hypergen list` - List available actions  
+- `hypergen info <action>` - Show action details
+
+**Management Commands:**
+- `hypergen template validate|info|list|examples`
+- `hypergen init workspace|generator`
+- `hypergen system status|version|help`
+- `hypergen config info|validate|create`
+
+**Advanced Commands:**
+- `hypergen trust status|add|remove|clear`  
+- `hypergen use|unuse <source>` - Template source management
+- `hypergen install|remove|update` - Package management
+- `hypergen clean|cleanup` - Cache management
+- `hypergen dev lint|preview|test` - Developer tools
+- `hypergen perf analyze|benchmark` - Performance tools
+- `hypergen migrate from-hygen|validate` - Migration tools
+
+**Documentation Structure:**
+- One page per major command group
+- Complete syntax reference for each command
+- All options and flags documented  
+- Working examples for each command
+- Error handling and troubleshooting
+- Cross-references to relevant guides
+
+**Files to Create:**
+- reference/cli/commands.mdoc (overview)
+- reference/cli/action.mdoc
+- reference/cli/template.mdoc
+- reference/cli/system.mdoc
+- reference/cli/trust.mdoc
+- reference/cli/options.mdoc (global flags)
+
+# Test Strategy:
+

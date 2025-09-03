@@ -1,0 +1,11 @@
+# Task ID: 12
+# Title: Cosmiconfig Integration
+# Status: pending
+# Dependencies: 11
+# Priority: medium
+# Description: Use cosmiconfig for all configuration file discovery across NPM and GitHub sources
+# Details:
+Implement cosmiconfig for NPM packages (prefer package.json but support hypergen.yml/json) and GitHub repositories (hypergen.yml at repository root).
+
+# Test Strategy:
+Configuration discovery tests, cosmiconfig integration tests, fallback behavior tests

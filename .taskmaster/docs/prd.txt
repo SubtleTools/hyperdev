@@ -1,0 +1,377 @@
+# Hypergen V8 Documentation System - Product Requirements Document
+
+## Project Overview
+
+**Project Name**: Hypergen Documentation System V8
+**Version**: 8.0.0
+**Project Type**: Documentation Infrastructure
+**Priority**: High
+**Target Release**: Q1 2025
+
+## Executive Summary
+
+Hypergen currently has a significant documentation gap where only ~20% of implemented features are properly documented, while some documentation describes non-existent "V8 future features." This project will create a comprehensive, user-centered documentation system that accurately reflects Hypergen's impressive feature set and serves all stakeholder needs.
+
+**Key Problem**: Users cannot effectively use Hypergen because:
+- Core features like npm package templates are barely documented
+- Getting started guides use non-functional examples
+- Documentation shows V8 features that don't exist yet
+- No clear learning paths for different user types
+
+**Solution**: Create a complete 90+ page documentation system organized by user journey with accurate, tested examples.
+
+## Target Audience
+
+### Primary Users
+1. **New Users** - Developers trying Hypergen for the first time
+2. **Template Creators** - Developers building reusable templates
+3. **Template Consumers** - Developers using existing templates
+4. **Team Leads** - Managing enterprise template usage
+5. **Contributors** - Extending and contributing to Hypergen
+
+### User Journeys
+- **Discovery Journey**: Learn about → Install → First success
+- **Creation Journey**: Learn syntax → Build template → Test → Share
+- **Consumption Journey**: Find template → Understand options → Customize → Generate
+- **Enterprise Journey**: Evaluate → Implement → Govern → Scale
+- **Contribution Journey**: Understand → Extend → Contribute → Maintain
+
+## Current State Analysis
+
+### Existing Documentation Issues
+- **docs/ folder**: Astro-based site with incomplete content (8 pages exist)
+- **docs-backup/ folder**: More complete but outdated markdown files
+- **CLI Examples**: Most examples show incorrect usage patterns
+- **Missing Documentation**: npm templates, presets, trust system, GitHub integration
+- **Misleading Content**: V8 decorator syntax that doesn't work
+
+### Working Features Not Documented
+- npm Package Template System (global caching, version management)
+- Preset System (pre-configured template variables)
+- Trust System (security for external templates)  
+- GitHub Integration (full repo template support)
+- Advanced CLI (18+ commands with rich functionality)
+- Performance System (multi-level caching, optimization)
+
+## Requirements
+
+### Functional Requirements
+
+#### FR1: Complete Page Structure (90+ pages)
+- **Root Pages** (5): Landing, overview, quick start, installation, FAQ
+- **Getting Started** (6): Installation through next steps tutorial track
+- **Guides** (21): Task-oriented guides for all major workflows
+- **Reference** (20): Complete CLI and API documentation  
+- **Examples** (16): Practical patterns and real-world recipes
+- **Developer** (12): Contributing and extending documentation
+- **Support** (10): Troubleshooting and community help
+
+#### FR2: User-Centered Information Architecture
+- **Progressive Disclosure**: Start simple, add complexity gradually
+- **Task-Oriented Organization**: Grouped by user goals
+- **Cross-Referenced Content**: Easy navigation between concepts
+- **Multiple Access Patterns**: Guides, references, examples, API docs
+- **Self-Service Discovery**: Users find answers without asking
+
+#### FR3: Accurate Content Reflecting Current Implementation
+- Document actual CLI commands and syntax
+- Remove non-existent V8 future features
+- Focus on working features (npm templates, presets, trust system)
+- Test all examples to ensure they work
+- Update configuration examples to match current schemas
+
+#### FR4: Complete API Reference
+- TypeDoc generated TypeScript API documentation
+- All CLI commands with complete option reference
+- Configuration file schemas and examples
+- Template syntax reference (EJS, Liquid)
+- Error code reference with solutions
+
+### Non-Functional Requirements
+
+#### NFR1: Content Quality
+- All examples must work with current Hypergen version
+- Links and references must remain valid
+- Content updated with each release
+- Clear, inclusive language throughout
+
+#### NFR2: Discoverability  
+- SEO optimized with proper tags and keywords
+- Comprehensive search functionality
+- Visual navigation aids and breadcrumbs
+- Quick reference cards for common tasks
+
+#### NFR3: Maintainability
+- Documentation as code approach
+- Automated validation of code examples
+- Version control integration
+- Community contribution workflow
+
+#### NFR4: Performance
+- Fast site loading and navigation
+- Responsive design for all devices
+- Accessible to users with disabilities
+- Works offline for reference materials
+
+## Technical Architecture
+
+### Technology Stack
+- **Site Framework**: Astro (existing setup in docs/)
+- **Content Format**: .mdoc files (Markdoc format)
+- **API Documentation**: TypeDoc for TypeScript API reference
+- **Validation**: Automated testing of code examples
+- **Deployment**: GitHub Pages (existing setup)
+
+### Content Organization
+```
+docs/
+├── src/content/docs/
+│   ├── index.mdoc (Root pages)
+│   ├── getting-started/ (Tutorial track)
+│   ├── guides/ (Task-oriented)
+│   ├── reference/ (Lookup docs)
+│   ├── examples/ (Practical patterns)
+│   ├── developer/ (Contributing)
+│   └── support/ (Help & troubleshooting)
+└── api/ (Generated TypeScript docs)
+```
+
+### Cross-Reference System
+- Contextual links between related concepts
+- "Next Steps" sections guide user progression
+- Quick reference cards summarize key commands
+- Search optimization with comprehensive tagging
+
+## User Stories
+
+### Epic 1: New User Success (Getting Started)
+**As a new developer**, I want to quickly understand and use Hypergen so that I can generate my first code within 5 minutes.
+
+- **US1.1**: Installation guide that works on all platforms
+- **US1.2**: "Your First Template" tutorial with working examples  
+- **US1.3**: Core concepts explained with clear mental models
+- **US1.4**: Preset system introduction with practical examples
+- **US1.5**: Template discovery guide showing npm packages and GitHub repos
+
+### Epic 2: Template Creation (Building Templates)
+**As a template creator**, I want comprehensive guides for building templates so that I can create professional, reusable templates for my team.
+
+- **US2.1**: Template basics with file structure and syntax
+- **US2.2**: template.yml configuration with all options documented
+- **US2.3**: Variable system with validation and conditional logic
+- **US2.4**: File-based routing system explanation
+- **US2.5**: Template testing strategies and best practices
+- **US2.6**: Publishing templates to npm with version management
+
+### Epic 3: Template Usage (Consuming Templates)
+**As a template consumer**, I want to easily find and use existing templates so that I can generate code without building templates myself.
+
+- **US3.1**: Template discovery from multiple sources (npm, GitHub, local)
+- **US3.2**: Understanding template options and presets
+- **US3.3**: Customizing template output for my needs
+- **US3.4**: Working with template versions and updates
+
+### Epic 4: Enterprise Workflows (Team Usage)
+**As a team lead**, I want enterprise patterns for template governance so that I can standardize code generation across my team.
+
+- **US4.1**: Team workflow patterns and best practices
+- **US4.2**: Template sharing strategies (private npm, GitHub, monorepo)
+- **US4.3**: Security and trust management for external templates
+- **US4.4**: CI/CD integration patterns
+- **US4.5**: Template versioning and governance strategies
+
+### Epic 5: Advanced Features (Power Users)
+**As an experienced user**, I want documentation for all advanced features so that I can leverage Hypergen's full capabilities.
+
+- **US5.1**: Advanced preset system with custom presets
+- **US5.2**: Performance optimization and caching system
+- **US5.3**: Trust system configuration and security management
+- **US5.4**: CLI automation and scripting patterns
+- **US5.5**: Developer tools and debugging utilities
+
+### Epic 6: Complete Reference (Lookup Documentation)
+**As any user**, I want complete reference documentation so that I can quickly look up syntax, commands, and options.
+
+- **US6.1**: All CLI commands with complete option reference
+- **US6.2**: Template syntax reference (EJS, Liquid, frontmatter)
+- **US6.3**: Configuration file schemas and examples
+- **US6.4**: TypeScript API reference with examples
+- **US6.5**: Error codes with solutions and troubleshooting
+
+### Epic 7: Practical Examples (Copy-Paste Solutions)
+**As a developer**, I want real-world examples so that I can copy and adapt patterns for my specific needs.
+
+- **US7.1**: Template examples (React component, API endpoint, CLI tool, full-stack app)
+- **US7.2**: Workflow examples (monorepo setup, microservice generation, documentation sites)
+- **US7.3**: Integration examples (GitHub Actions, Docker, VS Code, npm scripts)
+- **US7.4**: Pattern examples (composition, conditional generation, multi-file templates)
+
+### Epic 8: Community & Contribution (Extending Hypergen)
+**As a contributor**, I want development documentation so that I can contribute to and extend Hypergen.
+
+- **US8.1**: Development setup and architecture overview
+- **US8.2**: Testing guidelines and contribution process
+- **US8.3**: Plugin development and custom template engines
+- **US8.4**: Security integration and discovery source customization
+
+### Epic 9: Support & Troubleshooting (Problem Resolution)
+**As any user**, I want self-service support so that I can resolve issues without asking for help.
+
+- **US9.1**: Common issues FAQ with solutions
+- **US9.2**: Error message reference with resolution steps
+- **US9.3**: Migration help for version upgrades
+- **US9.4**: Community resources and getting help
+
+## Implementation Phases
+
+### Phase 1: Critical Foundation (Week 1-2)
+**Goal**: New users can successfully use Hypergen
+
+**Priority**: CRITICAL
+**Deliverables**:
+- Fix root pages (landing, overview, quick start, installation, FAQ)
+- Complete getting started tutorial track (6 pages)
+- Document npm package template system (core missing feature)
+- Remove misleading V8 future feature documentation
+- Create working CLI command examples
+
+**Success Criteria**:
+- New user can install and generate first template in 5 minutes
+- All getting started examples work with current version
+- npm package templates properly documented
+
+### Phase 2: Core Workflows (Week 3-4)
+**Goal**: Template creators can build and share templates
+
+**Priority**: HIGH
+**Deliverables**:
+- Complete template creation guides (6 pages)
+- Essential practical examples (React component, API endpoint, CLI tool)
+- CLI command reference documentation
+- Template.yml configuration reference
+- Preset system documentation
+
+**Success Criteria**:
+- Users can create their first template following the guides
+- All template examples work and are well-documented
+- CLI commands properly documented with all options
+
+### Phase 3: Advanced Features (Week 5-6)  
+**Goal**: Power users can leverage all Hypergen features
+
+**Priority**: MEDIUM-HIGH
+**Deliverables**:
+- Advanced feature guides (trust system, performance, CLI automation)
+- Complete practical examples (16 pages)
+- Configuration reference documentation
+- GitHub integration documentation
+- Template sharing workflows
+
+**Success Criteria**:
+- Advanced users can configure trust system and use GitHub repos
+- All advanced features properly documented
+- Enterprise patterns clearly explained
+
+### Phase 4: Complete Ecosystem (Week 7-8)
+**Goal**: Community can contribute and extend Hypergen
+
+**Priority**: MEDIUM
+**Deliverables**:
+- Developer contribution documentation  
+- Complete support and troubleshooting guides
+- TypeScript API reference (TypeDoc generated)
+- Community resources and processes
+- Migration and upgrade guides
+
+**Success Criteria**:
+- Contributors can set up development environment and contribute
+- Users can self-service most support questions
+- Complete API reference available
+
+## Success Metrics
+
+### User Success Indicators
+- **Time to First Success**: New users generate code within 5 minutes
+- **Self-Service Rate**: 80% of questions answered by documentation  
+- **Template Creation**: Users create first template within 30 minutes
+- **Feature Discovery**: Users find advanced features through navigation
+
+### Content Quality Indicators  
+- **Accuracy**: 100% of examples work with current version
+- **Completeness**: All CLI commands and features documented
+- **Freshness**: Content updated within 48 hours of releases
+- **Accessibility**: Clear language, good structure, inclusive examples
+
+### Business Impact
+- **Adoption Rate**: Increased new user conversion
+- **Support Reduction**: Decreased support ticket volume
+- **Community Growth**: Increased community contributions
+- **Feature Usage**: Increased usage of advanced features
+
+## Risks and Mitigations
+
+### High Risk: Scope Creep
+**Risk**: Adding too many "nice to have" pages delays critical content
+**Mitigation**: Strict phase prioritization, focus on Phase 1 completion first
+
+### Medium Risk: Content Accuracy
+**Risk**: Examples break with future Hypergen updates  
+**Mitigation**: Automated testing pipeline for all code examples
+
+### Medium Risk: Maintenance Burden
+**Risk**: Documentation becomes outdated quickly
+**Mitigation**: Documentation as code approach, release integration
+
+### Low Risk: Technical Complexity
+**Risk**: Astro/Markdoc learning curve slows development
+**Mitigation**: Use existing setup, focus on content over technical features
+
+## Dependencies
+
+### Internal Dependencies
+- Access to complete codebase for accuracy verification
+- Hypergen development team for technical review
+- Existing Astro documentation site infrastructure
+
+### External Dependencies  
+- TypeDoc for API reference generation
+- Astro framework for site building
+- GitHub Pages for deployment
+- Community feedback for content validation
+
+## Definition of Done
+
+### Phase 1 Complete
+- [ ] All 11 critical foundation pages written and published
+- [ ] npm package template system fully documented with working examples
+- [ ] Getting started tutorial tested by 3 new users successfully
+- [ ] All V8 future feature content removed or clearly marked
+- [ ] CLI examples verified to work with current version
+
+### Project Complete
+- [ ] All 90+ pages written, reviewed, and published
+- [ ] TypeScript API reference generated and integrated
+- [ ] All code examples tested and working
+- [ ] Cross-reference navigation system implemented
+- [ ] Search functionality working effectively
+- [ ] Community contribution process documented
+- [ ] Maintenance procedures established
+- [ ] Success metrics baseline established
+
+## Appendix
+
+### Technology Stack Details
+- **Astro**: Static site generator (already configured)
+- **Markdoc**: Content format (.mdoc files)
+- **TypeDoc**: TypeScript API documentation
+- **GitHub Actions**: CI/CD for validation and deployment
+- **Vercel/GitHub Pages**: Hosting platform
+
+### Content Standards
+- **Tone**: Professional but approachable, example-driven
+- **Structure**: Each page has clear purpose, examples, and next steps
+- **Code Examples**: All tested, include expected output
+- **Navigation**: Progressive disclosure, clear breadcrumbs
+- **Accessibility**: WCAG 2.1 AA compliant
+
+This PRD provides a comprehensive blueprint for creating world-class documentation that serves all Hypergen user types while accurately reflecting its impressive feature set.

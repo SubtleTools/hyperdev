@@ -1,0 +1,45 @@
+# Task ID: 4
+# Title: PHASE 1: Remove Misleading V8 Future Feature Documentation
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Clean up documentation that describes non-existent V8 features as if they're currently available
+# Details:
+Current documentation contains references to V8 features that don't exist yet, causing user confusion and frustration.
+
+**Issues to Fix:**
+
+**1. Action Decorator Syntax**
+- Remove examples showing `@action()` decorators that don't work
+- Document actual template.yml + actions.ts patterns that do work
+- Update all code examples to use current syntax
+
+**2. V8 Feature Pages**
+- Review docs/src/content/docs/v8-features.mdoc
+- Remove or clearly mark features as "planned" vs "implemented"  
+- Focus documentation on what actually works today
+
+**3. CLI Examples**
+- Audit all CLI command examples in existing docs
+- Update to match actual CLI implementation
+- Test all examples to ensure they work
+
+**4. Configuration Examples**
+- Verify all hypergen.json and template.yml examples
+- Update to match current schema implementations
+- Remove references to non-existent configuration options
+
+**Files to Audit:**
+- docs/src/content/docs/v8-features.mdoc
+- docs/src/content/docs/advanced-composition.mdoc  
+- docs/src/content/docs/getting-started.mdoc
+- docs-backup/ folder content (extract valuable patterns)
+
+**Success Criteria:**
+- Zero references to non-working decorator syntax
+- All CLI examples tested and working
+- Clear distinction between current vs planned features
+- No user confusion from misleading documentation
+
+# Test Strategy:
+

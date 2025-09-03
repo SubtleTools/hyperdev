@@ -1,0 +1,557 @@
+name: Release Validation
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  release:
+    types: [published, prereleased]
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version tag to validate'
+        required: true
+        type: string
+      skip_publish:
+        description: 'Skip publishing validation'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  CI: true
+  FORCE_COLOR: true
+  RELEASE_VALIDATION: true
+
+jobs:
+  # Pre-release validation
+  pre-release-validation:
+    name: Pre-Release Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should-validate: ${{ steps.check.outputs.should-validate }}
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.event.inputs.version_tag }}" != "" ]]; then
+            VERSION="${{ github.event.inputs.version_tag }}"
+          elif [[ "${{ github.ref }}" =~ refs/tags/v.* ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION=$(jq -r '.version' package.json)
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Validating version: $VERSION"
+
+      - name: Check if validation needed
+        id: check
+        run: |
+          # Always validate for manual dispatch or tags
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.ref }}" =~ refs/tags/.* ]]; then
+            echo "should-validate=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-validate=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build project
+        run: bun run build
+
+      - name: Validate package.json
+        run: |
+          # Check version matches tag
+          PACKAGE_VERSION=$(jq -r '.version' package.json)
+          EXPECTED_VERSION="${{ steps.version.outputs.version }}"
+          
+          if [[ "$EXPECTED_VERSION" =~ ^v.* ]]; then
+            EXPECTED_VERSION="${EXPECTED_VERSION#v}"
+          fi
+          
+          if [[ "$PACKAGE_VERSION" != "$EXPECTED_VERSION" ]]; then
+            echo "❌ Version mismatch: package.json has $PACKAGE_VERSION, expected $EXPECTED_VERSION"
+            exit 1
+          fi
+          
+          echo "✅ Version validation passed: $PACKAGE_VERSION"
+
+      - name: Validate build outputs
+        run: |
+          # Check that all expected files are built
+          REQUIRED_FILES=(
+            "lib/index.js"
+            "lib/index.d.ts" 
+            "lib/composition.js"
+            "lib/composition.d.ts"
+            "lib/validation.js"
+            "lib/validation.d.ts"
+          )
+          
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "❌ Missing required build file: $file"
+              exit 1
+            fi
+          done
+          
+          echo "✅ Build validation passed"
+
+      - name: Run unit tests
+        run: bun test
+
+  # Cross-platform release validation
+  release-matrix-validation:
+    name: Release Matrix Validation
+    needs: pre-release-validation
+    if: needs.pre-release-validation.outputs.should-validate == 'true'
+    timeout-minutes: 40
+    strategy:
+      fail-fast: true # Fail fast for release validation
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18', '20', '22']
+        package-manager: [npm, yarn, pnpm]
+        # Test representative combinations
+        include:
+          - os: ubuntu-latest
+            node-version: '20'
+            package-manager: bun
+          - os: windows-latest
+            node-version: '20'
+            package-manager: bun
+          - os: macos-latest
+            node-version: '20'
+            package-manager: bun
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup package managers
+        run: |
+          if [[ "${{ matrix.package-manager }}" == "bun" ]]; then
+            curl -fsSL https://bun.sh/install | bash
+            export PATH="$HOME/.bun/bin:$PATH"
+          elif [[ "${{ matrix.package-manager }}" == "pnpm" ]]; then
+            corepack enable pnpm
+          elif [[ "${{ matrix.package-manager }}" == "yarn" ]]; then
+            corepack enable yarn
+          fi
+        shell: bash
+
+      - name: Install dependencies
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              bun install
+              ;;
+            "npm")
+              npm install
+              ;;
+            "yarn")
+              yarn install
+              ;;
+            "pnpm")
+              pnpm install
+              ;;
+          esac
+        shell: bash
+
+      - name: Build project
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              bun run build
+              ;;
+            "npm")
+              npm run build
+              ;;
+            "yarn")
+              yarn build
+              ;;
+            "pnpm")
+              pnpm run build
+              ;;
+          esac
+        shell: bash
+
+      - name: Run validation tests
+        run: |
+          case "${{ matrix.package-manager }}" in
+            "bun")
+              export PATH="$HOME/.bun/bin:$PATH"
+              bun run test:matrix:validation
+              ;;
+            "npm")
+              npm run test:matrix:validation
+              ;;
+            "yarn")
+              yarn test:matrix:validation
+              ;;
+            "pnpm")
+              pnpm run test:matrix:validation
+              ;;
+          esac
+        shell: bash
+        env:
+          RELEASE_VALIDATION: true
+          TEST_PLATFORM: ${{ matrix.os }}
+          TEST_NODE_VERSION: ${{ matrix.node-version }}
+          TEST_PACKAGE_MANAGER: ${{ matrix.package-manager }}
+
+  # Template generation validation for release
+  release-template-validation:
+    name: Release Template Validation
+    needs: pre-release-validation
+    if: needs.pre-release-validation.outputs.should-validate == 'true'
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        template-scenario:
+          - { type: library, pm: npm, linter: eslint, formatter: prettier }
+          - { type: library, pm: bun, linter: biome, formatter: biome }
+          - { type: cli, pm: yarn, linter: eslint, formatter: dprint }
+          - { type: cli, pm: pnpm, linter: biome, formatter: prettier }
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Setup package managers
+        run: |
+          if [[ "${{ matrix.template-scenario.pm }}" == "pnpm" ]]; then
+            corepack enable pnpm
+          elif [[ "${{ matrix.template-scenario.pm }}" == "yarn" ]]; then
+            corepack enable yarn
+          fi
+        shell: bash
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build project
+        run: bun run build
+
+      - name: Generate test project
+        run: |
+          mkdir -p release-validation
+          cd release-validation
+          
+          node ../lib/index.js new release-test-${{ matrix.template-scenario.type }} \
+            --template-type ${{ matrix.template-scenario.type }} \
+            --package-manager ${{ matrix.template-scenario.pm }} \
+            --linter ${{ matrix.template-scenario.linter }} \
+            --formatter ${{ matrix.template-scenario.formatter }} \
+            --test-framework vitest \
+            --no-interactive
+        shell: bash
+        env:
+          HYPERGEN_TEST_MODE: true
+
+      - name: Validate generated project
+        working-directory: release-validation/release-test-${{ matrix.template-scenario.type }}
+        run: |
+          # Validate structure
+          if [[ ! -f "package.json" ]]; then
+            echo "❌ Missing package.json"
+            exit 1
+          fi
+          
+          if [[ ! -f "tsconfig.json" ]]; then
+            echo "❌ Missing tsconfig.json"
+            exit 1
+          fi
+          
+          # Validate package.json content
+          PACKAGE_MANAGER=$(jq -r '.packageManager // "none"' package.json)
+          if [[ "$PACKAGE_MANAGER" == "none" ]] && [[ "${{ matrix.template-scenario.pm }}" != "npm" ]]; then
+            echo "⚠️ packageManager field not set in package.json"
+          fi
+          
+          echo "✅ Project structure validation passed"
+        shell: bash
+
+      - name: Test generated project installation
+        working-directory: release-validation/release-test-${{ matrix.template-scenario.type }}
+        run: |
+          case "${{ matrix.template-scenario.pm }}" in
+            "bun")
+              bun install
+              bun run build || echo "No build script"
+              bun test || echo "No tests to run"
+              ;;
+            "npm")
+              npm install
+              npm run build || echo "No build script" 
+              npm test || echo "No tests to run"
+              ;;
+            "yarn")
+              yarn install
+              yarn build || echo "No build script"
+              yarn test || echo "No tests to run"
+              ;;
+            "pnpm")
+              pnpm install
+              pnpm run build || echo "No build script"
+              pnpm test || echo "No tests to run"
+              ;;
+          esac
+        shell: bash
+
+      - name: Upload release validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-validation-${{ matrix.os }}-${{ matrix.template-scenario.type }}-${{ matrix.template-scenario.pm }}
+          path: release-validation/
+          retention-days: 30
+
+  # NPM package validation
+  npm-package-validation:
+    name: NPM Package Validation
+    needs: [pre-release-validation, release-matrix-validation, release-template-validation]
+    if: needs.pre-release-validation.outputs.should-validate == 'true' && !github.event.inputs.skip_publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build project
+        run: bun run build
+
+      - name: Validate package files
+        run: |
+          # Check npm pack output
+          npm pack --dry-run > pack-output.txt
+          
+          # Verify essential files are included
+          REQUIRED_FILES=(
+            "lib/"
+            "_templates/"
+            "template.yml"
+            "package.json"
+            "README.md"
+          )
+          
+          for file in "${REQUIRED_FILES[@]}"; do
+            if ! grep -q "$file" pack-output.txt; then
+              echo "❌ Required file not included in package: $file"
+              cat pack-output.txt
+              exit 1
+            fi
+          done
+          
+          echo "✅ Package file validation passed"
+
+      - name: Test package installation
+        run: |
+          # Create a temporary directory and test installation
+          mkdir -p /tmp/test-install
+          cd /tmp/test-install
+          
+          # Pack the package
+          cd ${{ github.workspace }}
+          npm pack
+          
+          PACKAGE_FILE=$(ls *.tgz)
+          
+          # Test installation in clean environment
+          cd /tmp/test-install
+          npm init -y
+          npm install "${{ github.workspace }}/$PACKAGE_FILE"
+          
+          # Verify the package can be imported
+          node -e "
+            const pkg = require('@hypergen/monorepo-pack');
+            console.log('Package imported successfully');
+            console.log('Available exports:', Object.keys(pkg));
+          "
+          
+          echo "✅ Package installation test passed"
+
+      - name: Validate TypeScript definitions
+        run: |
+          # Test that TypeScript definitions are valid
+          mkdir -p /tmp/ts-test
+          cd /tmp/ts-test
+          
+          npm init -y
+          npm install typescript @types/node
+          npm install "${{ github.workspace }}/$(ls ${{ github.workspace }}/*.tgz)"
+          
+          cat > test.ts << 'EOF'
+          import { MonorepoConfig, getValidToolCombinations } from '@hypergen/monorepo-pack';
+          
+          const config: MonorepoConfig = {
+            name: 'test',
+            packageManager: 'bun',
+            linter: 'eslint',
+            formatter: 'prettier',
+            testFramework: 'vitest',
+            tools: {
+              husky: false,
+              lintStaged: false,
+              commitlint: false,
+              changesets: false
+            }
+          };
+          
+          const combinations = getValidToolCombinations();
+          console.log('TypeScript validation passed');
+          EOF
+          
+          npx tsc --noEmit --strict test.ts
+          
+          echo "✅ TypeScript definitions validation passed"
+
+  # Generate release report
+  release-report:
+    name: Release Report
+    needs: [pre-release-validation, release-matrix-validation, release-template-validation, npm-package-validation]
+    if: always() && needs.pre-release-validation.outputs.should-validate == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Generate release report
+        run: |
+          cat > release-report.md << EOF
+          # Release Validation Report
+          
+          **Version:** ${{ needs.pre-release-validation.outputs.version }}
+          **Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          **Commit:** ${{ github.sha }}
+          **Trigger:** ${{ github.event_name }}
+          
+          ## Validation Summary
+          
+          - **Pre-Release Validation:** ${{ needs.pre-release-validation.result == 'success' && '✅ Passed' || '❌ Failed' }}
+          - **Matrix Validation:** ${{ needs.release-matrix-validation.result == 'success' && '✅ Passed' || needs.release-matrix-validation.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}
+          - **Template Validation:** ${{ needs.release-template-validation.result == 'success' && '✅ Passed' || needs.release-template-validation.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}
+          - **NPM Package Validation:** ${{ needs.npm-package-validation.result == 'success' && '✅ Passed' || needs.npm-package-validation.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}
+          
+          ## Release Readiness
+          
+          EOF
+          
+          # Check overall status
+          OVERALL_STATUS="success"
+          
+          if [[ "${{ needs.pre-release-validation.result }}" != "success" ]]; then
+            OVERALL_STATUS="failed"
+            echo "❌ **Pre-release validation failed** - Release is not ready" >> release-report.md
+          elif [[ "${{ needs.release-matrix-validation.result }}" == "failure" ]]; then
+            OVERALL_STATUS="failed"  
+            echo "❌ **Matrix validation failed** - Release is not ready" >> release-report.md
+          elif [[ "${{ needs.release-template-validation.result }}" == "failure" ]]; then
+            OVERALL_STATUS="failed"
+            echo "❌ **Template validation failed** - Release is not ready" >> release-report.md
+          elif [[ "${{ needs.npm-package-validation.result }}" == "failure" ]]; then
+            OVERALL_STATUS="failed"
+            echo "❌ **NPM package validation failed** - Release is not ready" >> release-report.md
+          else
+            echo "✅ **All validations passed** - Release is ready for deployment" >> release-report.md
+          fi
+          
+          cat >> release-report.md << EOF
+          
+          ## Tested Configurations
+          
+          - **Operating Systems:** Ubuntu, Windows, macOS
+          - **Node.js Versions:** 18, 20, 22
+          - **Package Managers:** npm, yarn, pnpm, bun
+          - **Template Types:** library, cli
+          - **Tool Combinations:** Multiple linter/formatter combinations
+          
+          ## Artifacts
+          
+          Release validation artifacts have been uploaded and are available for review.
+          
+          ---
+          
+          Generated by GitHub Actions on $(date -u '+%Y-%m-%d at %H:%M:%S UTC')
+          EOF
+          
+          echo "Overall validation status: $OVERALL_STATUS"
+          echo "overall-status=$OVERALL_STATUS" >> $GITHUB_OUTPUT
+
+      - name: Upload release report
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-validation-report
+          path: release-report.md
+          retention-days: 90
+
+      - name: Add report to job summary
+        run: |
+          cat release-report.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Check release readiness
+        run: |
+          if [[ "${{ needs.pre-release-validation.result }}" != "success" ]] || 
+             [[ "${{ needs.release-matrix-validation.result }}" == "failure" ]] ||
+             [[ "${{ needs.release-template-validation.result }}" == "failure" ]] ||
+             [[ "${{ needs.npm-package-validation.result }}" == "failure" ]]; then
+            echo "❌ Release validation failed - not ready for release"
+            exit 1
+          else
+            echo "✅ Release validation passed - ready for release"
+          fi

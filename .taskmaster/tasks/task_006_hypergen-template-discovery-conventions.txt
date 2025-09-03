@@ -1,0 +1,11 @@
+# Task ID: 6
+# Title: Creator Trust System - Core Infrastructure
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Implement Creator trust storage and management system
+# Details:
+Create CreatorTrust interface and local storage system. Trust is per-creator (user/organization), not per-repository. Store trust relationships with timestamps and user context.
+
+# Test Strategy:
+Unit tests for trust storage, integration tests for trust persistence

@@ -1,0 +1,55 @@
+# Task ID: 6
+# Title: PHASE 2: Essential Practical Examples
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Create 5 core template examples that demonstrate real-world patterns and can be copy-pasted by users
+# Details:
+Users learn best from working examples. These examples must be practical, complete, and demonstrate different template patterns.
+
+**Examples to Create:**
+
+1. **React Component Template**
+   - Complete React component with TypeScript
+   - Props interface, styles, tests, stories
+   - Demonstrates: complex file generation, conditional logic
+   - Shows: modern React patterns, testing integration
+
+2. **REST API Endpoint Template**  
+   - Express/Fastify endpoint with validation
+   - Route handler, middleware, tests
+   - Demonstrates: backend patterns, request/response types
+   - Shows: API documentation generation, error handling
+
+3. **CLI Tool Template**
+   - Complete CLI application setup
+   - Command parsing, help system, configuration
+   - Demonstrates: project scaffolding, executable setup
+   - Shows: npm package.json configuration, binary setup
+
+4. **Database Migration Template**
+   - SQL migration files with rollback
+   - Schema changes, data transformations
+   - Demonstrates: versioned file generation, SQL patterns
+   - Shows: migration naming conventions, safety patterns
+
+5. **Full Stack Application Template**
+   - Complete application with frontend/backend
+   - Multi-directory structure, configuration files
+   - Demonstrates: complex project scaffolding
+   - Shows: preset system integration, advanced composition
+
+**Requirements:**
+- Each example includes complete source code
+- Working template.yml with presets
+- Documentation explaining patterns used
+- Cross-references to relevant guides
+- All examples tested and verified working
+
+**File Locations:**
+- examples/templates/ directory
+- Each example gets its own .mdoc file
+- Include downloadable template packages
+
+# Test Strategy:
+

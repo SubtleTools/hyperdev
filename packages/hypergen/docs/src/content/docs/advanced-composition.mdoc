@@ -1,0 +1,821 @@
+---
+title: Template Composition Guide
+description: Complete guide to Hypergen V8's template composition, inheritance, and discovery capabilities
+---
+
+# Template Composition Guide
+
+Hypergen V8 provides powerful template composition capabilities that enable template reuse, inheritance, and conditional inclusion. This guide covers all composition features available in V8.
+
+## Table of Contents
+
+- [Template.yml Configuration System](#templateyml-configuration-system)
+- [Template Composition & Inheritance](#template-composition--inheritance)
+- [Template Discovery & Sources](#template-discovery--sources)
+- [TypeScript Action Integration](#typescript-action-integration)
+- [LiquidJS Template Engine](#liquidjs-template-engine)
+- [Security & Trust System](#security--trust-system)
+- [Real-World Examples](#real-world-examples)
+- [Best Practices](#best-practices)
+
+## Template.yml Configuration System
+
+### Rich Variable System
+
+Create templates with sophisticated variable validation:
+
+```yaml
+# template.yml
+name: react-component
+description: Create React components with full type safety
+version: 1.0.0
+author: "@company"
+
+variables:
+  # String with pattern validation
+  name:
+    type: string
+    required: true
+    pattern: ^[A-Z][a-zA-Z0-9]*$
+    description: Component name in PascalCase
+    
+  # Boolean with default
+  typescript:
+    type: boolean
+    default: true
+    description: Generate TypeScript component
+    
+  # Enum with predefined values
+  styling:
+    type: enum
+    values: [css, scss, styled-components, emotion, tailwind]
+    default: css
+    description: Styling approach to use
+    
+  # Array with allowed values
+  features:
+    type: array
+    values: [hooks, context, memo, forwardRef, suspense]
+    default: []
+    description: React features to include
+    
+  # Object with nested properties
+  metadata:
+    type: object
+    properties:
+      author: { type: string }
+      version: { type: string, pattern: ^\d+\.\d+\.\d+$ }
+      license: { type: enum, values: [MIT, Apache-2.0, GPL-3.0] }
+    description: Component metadata
+```
+
+### Variable Types & Validation
+
+**Supported Types:**
+- `string`: Text with optional regex pattern validation
+- `boolean`: True/false values with defaults
+- `number`: Numeric values with min/max constraints
+- `enum`: Predefined list of allowed values
+- `array`: Lists with optional value constraints
+- `object`: Nested objects with property schemas
+
+**Validation Features:**
+- Required field checking
+- Pattern matching with regex
+- Default values
+- Nested object validation
+- Array value restrictions
+
+## Template Composition & Inheritance
+
+### Basic Composition
+
+Inherit from remote templates and compose functionality:
+
+```yaml
+# template.yml with composition
+name: enhanced-component
+description: Component with base functionality and enhancements
+version: 1.0.0
+
+# Inherit from a base template
+composition:
+  base: https://github.com/company/base-component
+  
+  # Conditionally include other templates
+  includes:
+    - template: typescript-types
+      condition: typescript == true
+      variables:
+        strictMode: true
+        
+    - template: styled-props
+      condition: styling == "styled-components"
+      variables:
+        theme: dark
+        
+    - template: storybook-setup
+      condition: withStorybook == true
+      
+    - template: testing-setup
+      condition: withTests == true
+      variables:
+        framework: jest
+
+variables:
+  name:
+    type: string
+    required: true
+    
+  typescript:
+    type: boolean
+    default: true
+    
+  styling:
+    type: enum
+    values: [css, styled-components]
+    default: css
+    
+  withStorybook:
+    type: boolean
+    default: false
+    
+  withTests:
+    type: boolean
+    default: true
+```
+
+### Template Sources
+
+Templates can be composed from multiple sources:
+
+**GitHub Repositories:**
+```yaml
+composition:
+  base: https://github.com/user/template-repo
+  includes:
+    - template: https://github.com/company/shared-components/tree/main/base
+```
+
+**NPM Packages:**
+```yaml
+composition:
+  base: @company/base-template
+  includes:
+    - template: @hypergen/react-typescript
+```
+
+**Local Templates:**
+```yaml
+composition:
+  base: ../shared/base-template
+  includes:
+    - template: ./extensions/typescript-support
+```
+
+### Conditional Inclusion
+
+Use powerful condition expressions:
+
+```yaml
+composition:
+  includes:
+    # Simple boolean check
+    - template: typescript-config
+      condition: typescript == true
+      
+    # Complex expressions
+    - template: advanced-styling
+      condition: styling == "styled-components" && theme != "basic"
+      
+    # Array membership
+    - template: hooks-setup
+      condition: features.includes("hooks")
+      
+    # Multiple conditions
+    - template: production-config
+      condition: environment == "production" && deployment.includes("docker")
+```
+
+### Variable Mapping
+
+Pass variables between composed templates:
+
+```yaml
+composition:
+  includes:
+    - template: database-setup
+      variables:
+        # Map local variables to template variables
+        dbType: database
+        connectionPool: maxConnections
+        # Set fixed values
+        ssl: true
+        migrations: auto
+      condition: withDatabase == true
+```
+
+## Template Discovery & Sources
+
+### NPM Integration
+
+Discover and use templates from NPM:
+
+**Naming Conventions:**
+- `hypergen-*` (e.g., `hypergen-react`, `hypergen-node-api`)
+- `@user/hypergen-*` (e.g., `@company/hypergen-templates`)
+- `@hypergen/template-*` (official templates)
+
+```bash
+# Discover NPM templates
+hypergen discover react
+hypergen discover @company/templates
+hypergen discover database
+
+# Use NPM templates directly
+hypergen @company/hypergen-react --name=Button
+```
+
+### GitHub Discovery
+
+Find templates via GitHub topics and direct URLs:
+
+**GitHub Conventions:**
+- Repository topic: `hypergen-template`
+- Must contain `template.yml` or `hypergen.yml`
+- Support for specific branches/paths
+
+```bash
+# Discover GitHub templates
+hypergen discover --source=github "react-component"
+hypergen discover --source=github "hypergen-template"
+
+# Use GitHub templates directly
+hypergen url resolve https://github.com/user/my-template
+hypergen https://github.com/user/my-template --name=MyComponent
+```
+
+### Local Template Discovery
+
+Organize and discover local templates:
+
+```bash
+# List local templates
+hypergen template list
+hypergen template list _templates/
+hypergen template list generators/
+
+# Validate templates
+hypergen template validate _templates/my-generator
+hypergen template validate generators/react-components/
+```
+
+**Local Structure:**
+```
+_templates/
+├── react-components/
+│   ├── template.yml
+│   ├── component.liquid.t
+│   ├── test.liquid.t
+│   └── actions.ts
+├── api-endpoints/
+│   ├── template.yml
+│   ├── controller.liquid.t
+│   └── routes.liquid.t
+└── shared/
+    └── base-template/
+        ├── template.yml
+        └── common.liquid.t
+```
+
+## TypeScript Action Integration
+
+### Modern Action System
+
+Combine template composition with TypeScript actions:
+
+```typescript
+// actions.ts
+import { action } from 'hypergen/actions';
+import type { ActionContext, ActionResult } from 'hypergen/types';
+
+async function createEnhancedComponent(context: ActionContext): Promise<ActionResult> {
+  const { args, utils, logger } = context;
+  
+  // Use template composition results
+  const hasTypescript = args.typescript === true;
+  const hasStyling = args.styling !== 'css';
+  
+  // Create directory structure
+  const componentDir = `src/components/${args.name}`;
+  await utils.createDirectory(componentDir);
+  
+  // Conditional file generation based on composition
+  if (hasTypescript) {
+    await utils.createDirectory(`${componentDir}/types`);
+    logger.info('📝 Created TypeScript types directory');
+  }
+  
+  if (hasStyling) {
+    await utils.createDirectory(`${componentDir}/styles`);
+    logger.info('🎨 Created styles directory');
+  }
+  
+  // Generate files based on template composition
+  const files = [`${componentDir}/${args.name}.tsx`];
+  
+  if (args.withTests) {
+    files.push(`${componentDir}/${args.name}.test.tsx`);
+  }
+  
+  if (args.withStorybook) {
+    files.push(`${componentDir}/${args.name}.stories.tsx`);
+  }
+  
+  logger.info(`✅ Created enhanced component ${args.name}`);
+  
+  return { 
+    success: true,
+    files: files,
+    metadata: {
+      componentName: args.name,
+      hasTypescript,
+      hasStyling,
+      features: args.features || []
+    }
+  };
+}
+
+// Bun-compatible decorator application
+const decoratedAction = action({
+  name: 'create-enhanced-component',
+  description: 'Create a React component with composition-based enhancements',
+  category: 'react',
+  parameters: {
+    name: { type: 'string', required: true },
+    typescript: { type: 'boolean', default: true },
+    styling: { type: 'enum', values: ['css', 'styled-components', 'emotion'], default: 'css' },
+    withTests: { type: 'boolean', default: true },
+    withStorybook: { type: 'boolean', default: false },
+    features: { type: 'array', values: ['hooks', 'context', 'memo'], default: [] }
+  }
+})(createEnhancedComponent);
+
+export { decoratedAction as createEnhancedComponent };
+```
+
+### Action Discovery
+
+Actions are automatically discovered and integrated:
+
+```bash
+# List all discovered actions
+hypergen action list
+
+# Get detailed action information
+hypergen action info create-enhanced-component
+
+# Execute action with composition
+hypergen create-enhanced-component --name=UserCard --typescript=true --styling=styled-components
+```
+
+## LiquidJS Template Engine
+
+### Advanced Template Features
+
+Use LiquidJS for powerful templating with composition context:
+
+```liquid
+---
+to: src/components/{{ name }}/{{ name }}.{{ typescript | ternary: "tsx", "jsx" }}
+skip_if: {{ name == "Skip" }}
+---
+import React{% if typescript %}, { FC }{% endif %} from 'react';
+{% if styling == "styled-components" %}
+import styled from 'styled-components';
+{% endif %}
+{% if features contains "hooks" %}
+import { useState, useEffect } from 'react';
+{% endif %}
+
+{% if typescript %}
+interface {{ name }}Props {
+  children?: React.ReactNode;
+  {% if features contains "context" %}
+  context?: any;
+  {% endif %}
+}
+{% endif %}
+
+{% if styling == "styled-components" %}
+const {{ name }}Container = styled.div`
+  /* Styled components styles */
+  padding: 1rem;
+  border-radius: 0.5rem;
+`;
+{% endif %}
+
+{% if features contains "memo" %}
+const {{ name }}Component{% if typescript %}: FC<{{ name }}Props>{% endif %} = React.memo(({% if typescript %}{ children, ...props }: {{ name }}Props{% else %}props{% endif %}) => {
+{% else %}
+export const {{ name }}{% if typescript %}: FC<{{ name }}Props>{% endif %} = ({% if typescript %}{ children, ...props }: {{ name }}Props{% else %}props{% endif %}) => {
+{% endif %}
+  {% if features contains "hooks" %}
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+  {% endif %}
+
+  return (
+    {% if styling == "styled-components" %}
+    <{{ name }}Container>
+    {% else %}
+    <div className="{{ name | kebabCase }}">
+    {% endif %}
+      <h1>{{ name | humanize }}</h1>
+      {% if features contains "hooks" %}
+      {isLoaded && (
+        <p>Component loaded successfully!</p>
+      )}
+      {% endif %}
+      {children}
+    {% if styling == "styled-components" %}
+    </{{ name }}Container>
+    {% else %}
+    </div>
+    {% endif %}
+  );
+{% if features contains "memo" %}
+});
+
+export const {{ name }} = {{ name }}Component;
+{% else %}
+};
+{% endif %}
+
+{% if typescript %}
+export type { {{ name }}Props };
+{% endif %}
+```
+
+### Rich Filter System
+
+LiquidJS provides extensive filters:
+
+```liquid
+{{ name | camelCase }}          # userName
+{{ name | pascalCase }}         # UserName
+{{ name | snakeCase }}          # user_name
+{{ name | kebabCase }}          # user-name
+{{ name | constantCase }}       # USER_NAME
+{{ name | pluralize }}          # users
+{{ name | singularize }}        # user
+{{ name | humanize }}           # User name
+{{ name | titleize }}           # User Name
+{{ name | capitalize }}         # User name
+```
+
+## Security & Trust System
+
+### Creator Trust Management
+
+Safely use templates from remote sources:
+
+```bash
+# Trust a GitHub user/organization
+hypergen trust @username
+hypergen trust @company
+
+# Trust for specific operations
+hypergen trust @company --scope=templates
+hypergen trust @dev-team --scope=actions
+
+# List trusted creators
+hypergen trust list
+
+# Revoke trust
+hypergen trust revoke @username
+```
+
+### Safe Template Execution
+
+Hypergen V8 includes comprehensive security features:
+
+**Security Model:**
+- No `eval()` usage (LiquidJS benefit)
+- Sandboxed template execution
+- Explicit consent for untrusted templates
+- Transparent logging of remote access
+- Template validation before execution
+
+**Trust Workflow:**
+1. Template requested from untrusted source
+2. User prompted with template details and creator info
+3. One-time consent or permanent trust decision
+4. Template cached with trust metadata
+5. Future uses skip consent for trusted creators
+
+## Real-World Examples
+
+### Full-Stack Component Generation
+
+```yaml
+# template.yml
+name: fullstack-component
+description: Generate component with API integration
+version: 1.0.0
+
+composition:
+  base: @hypergen/react-component
+  includes:
+    - template: @hypergen/api-client
+      condition: withApi == true
+      variables:
+        endpoint: api/{{ name | kebabCase }}
+        method: GET
+        
+    - template: @company/styled-system
+      condition: styling == "styled-system"
+      
+    - template: ./local/testing-utils
+      condition: withTests == true
+
+variables:
+  name:
+    type: string
+    required: true
+    
+  withApi:
+    type: boolean
+    default: true
+    
+  apiEndpoint:
+    type: string
+    default: ""
+    
+  styling:
+    type: enum
+    values: [css, styled-components, styled-system]
+    default: css
+    
+  withTests:
+    type: boolean
+    default: true
+```
+
+### Micro-Service Template
+
+```yaml
+# template.yml
+name: microservice
+description: Complete microservice with all configurations
+version: 2.0.0
+
+composition:
+  base: https://github.com/company/base-service
+  includes:
+    - template: database-integration
+      condition: database != "none"
+      variables:
+        type: "{{ database }}"
+        migrations: true
+        
+    - template: auth-middleware
+      condition: requiresAuth == true
+      
+    - template: docker-config
+      condition: deployment.includes("docker")
+      
+    - template: k8s-config
+      condition: deployment.includes("kubernetes")
+
+variables:
+  serviceName:
+    type: string
+    required: true
+    pattern: ^[a-z][a-z0-9-]*$
+    
+  database:
+    type: enum
+    values: [none, postgres, mongodb, mysql]
+    default: postgres
+    
+  requiresAuth:
+    type: boolean
+    default: true
+    
+  deployment:
+    type: array
+    values: [docker, kubernetes, serverless]
+    default: [docker]
+    
+  port:
+    type: number
+    default: 3000
+    min: 1000
+    max: 65535
+```
+
+### Design System Component
+
+```yaml
+# template.yml
+name: design-system-component
+description: Component following design system patterns
+version: 1.0.0
+
+composition:
+  base: @company/design-system-base
+  includes:
+    - template: accessibility-features
+      variables:
+        level: AA
+        
+    - template: responsive-behavior
+      condition: responsive == true
+      
+    - template: theme-integration
+      variables:
+        tokens: "{{ themeTokens }}"
+        
+    - template: documentation-generation
+      condition: withDocs == true
+
+variables:
+  componentType:
+    type: enum
+    values: [atom, molecule, organism, template, page]
+    required: true
+    
+  responsive:
+    type: boolean
+    default: true
+    
+  themeTokens:
+    type: array
+    values: [colors, typography, spacing, shadows, borders]
+    default: [colors, spacing]
+    
+  withDocs:
+    type: boolean
+    default: true
+    
+  accessibility:
+    type: object
+    properties:
+      level: { type: enum, values: [A, AA, AAA], default: AA }
+      features: { type: array, values: [keyboard, screenReader, highContrast] }
+```
+
+## Best Practices
+
+### Template Design
+
+**1. Use Clear Variable Names**
+```yaml
+# Good
+variables:
+  componentName: { type: string, required: true }
+  includeTests: { type: boolean, default: true }
+  
+# Avoid
+variables:
+  n: { type: string }
+  t: { type: boolean }
+```
+
+**2. Provide Rich Descriptions**
+```yaml
+variables:
+  deploymentTarget:
+    type: enum
+    values: [development, staging, production]
+    default: development
+    description: "Target environment for deployment configuration"
+```
+
+**3. Use Composition Thoughtfully**
+```yaml
+composition:
+  base: @company/base-template  # Stable, well-tested base
+  includes:
+    - template: experimental-features
+      condition: enableExperimentalFeatures == true  # Opt-in only
+```
+
+### Performance Optimization
+
+**1. Conditional Loading**
+- Only include templates that are actually needed
+- Use specific conditions to avoid unnecessary composition
+
+**2. Caching Strategy**
+- Remote templates are automatically cached
+- Local template discovery is optimized with hash indexing
+
+**3. Parallel Processing**
+- Template discovery happens in parallel
+- Multiple composition sources resolved concurrently
+
+### Security Guidelines
+
+**1. Trust Management**
+- Be selective with trust decisions
+- Review template sources before trusting
+- Use organization-level trust for team templates
+
+**2. Template Validation**
+- Always validate templates before use
+- Use the built-in validation commands
+- Test templates in safe environments first
+
+**3. Source Verification**
+- Prefer official and well-maintained templates
+- Review template code when possible
+- Use version pinning for production templates
+
+### Error Handling
+
+**1. Graceful Degradation**
+```yaml
+composition:
+  includes:
+    - template: optional-enhancement
+      condition: advancedFeatures == true
+      continueOnError: true  # Don't fail if template unavailable
+```
+
+**2. Clear Error Messages**
+```yaml
+variables:
+  name:
+    type: string
+    required: true
+    pattern: ^[A-Z][a-zA-Z0-9]*$
+    description: "Component name in PascalCase (e.g., UserProfile)"
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Template Not Found:**
+```bash
+# Check template discovery
+hypergen template list
+hypergen discover <template-name>
+
+# Validate template structure
+hypergen template validate <path>
+```
+
+**Composition Failures:**
+```bash
+# Check network connectivity for remote templates
+curl -I https://github.com/user/template
+
+# Verify trust settings
+hypergen trust list
+
+# Check template compatibility
+hypergen template validate --composition <path>
+```
+
+**Variable Validation Errors:**
+```bash
+# Use debug mode for detailed validation info
+DEBUG=hypergen:validation hypergen <template> --name=Test
+```
+
+### Getting Help
+
+- Built-in help: `hypergen help`
+- Template validation: `hypergen template validate <path>`
+- Action information: `hypergen action info <action>`
+- System status: `hypergen system status`
+- GitHub Issues: [Report problems](https://github.com/svallory/hypergen/issues)
+
+## Migration from V7
+
+### Gradual Adoption
+
+V8's composition features are fully optional:
+
+1. **Existing templates work unchanged** - No migration required
+2. **Add template.yml gradually** - Enhance templates over time
+3. **Use LiquidJS selectively** - Mix with existing EJS templates
+4. **Enable discovery when ready** - Start with local templates
+
+### Enhanced Capabilities
+
+V8 adds powerful new features while maintaining compatibility:
+
+- Rich variable validation
+- Template composition and inheritance  
+- Multi-source template discovery
+- TypeScript action integration
+- Enhanced security with trust system
+
+The composition system represents a major advancement in template reusability and maintainability, enabling sophisticated template architectures while keeping simple use cases simple.

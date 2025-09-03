@@ -1,0 +1,56 @@
+# Task ID: 9
+# Title: PHASE 3: Complete Example Library
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Build comprehensive library of 16 practical examples covering all major template patterns and integration scenarios
+# Details:
+Complete the example library to provide copy-paste solutions for common use cases. This supports self-service learning and reduces support burden.
+
+**Template Examples (5 remaining):**
+- Database schema template
+- Docker configuration template  
+- Terraform infrastructure template
+- Test suite generator template
+- Configuration file template
+
+**Workflow Examples (4 pages):**
+- Monorepo scaffolding workflow
+- Microservice generation pipeline
+- Documentation site creation
+- Testing framework setup
+
+**Integration Examples (4 pages):**  
+- GitHub Actions CI/CD integration
+- Docker container integration
+- VS Code extension integration
+- npm scripts automation
+
+**Pattern Examples (3 pages):**
+- Template composition and inheritance
+- Conditional generation based on environment
+- Multi-file template organization
+
+**Requirements for Each Example:**
+- Complete, working template code
+- template.yml with preset configurations
+- Step-by-step usage instructions
+- Expected output examples
+- Common variations and customizations
+- Troubleshooting section
+
+**Quality Standards:**
+- All examples tested with current Hypergen version
+- Clear explanations of design decisions
+- Cross-references to relevant guides
+- Downloadable as working templates
+- Consistent formatting and style
+
+**File Organization:**
+- examples/ directory with subdirectories
+- Each example in separate .mdoc file  
+- Supporting files in template packages
+- Integration with main navigation
+
+# Test Strategy:
+

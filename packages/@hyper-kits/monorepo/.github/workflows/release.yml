@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/hypergen-monorepo/**'
+  pull_request:
+    paths:
+      - 'packages/hypergen-monorepo/**'
+
+# Allow one concurrent deployment
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Test job - runs on all pushes and PRs
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: packages/hypergen-monorepo
+
+      - name: Build package
+        run: bun run build
+        working-directory: packages/hypergen-monorepo
+
+      - name: Run tests
+        run: bun run test
+        working-directory: packages/hypergen-monorepo
+
+      - name: Run matrix tests
+        run: bun run test:matrix:ci
+        working-directory: packages/hypergen-monorepo
+
+  # Release job - only runs on main branch pushes
+  release:
+    name: Release
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      released: ${{ steps.semantic.outputs.new_release_published }}
+      version: ${{ steps.semantic.outputs.new_release_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: packages/hypergen-monorepo
+
+      - name: Build package
+        run: bun run build
+        working-directory: packages/hypergen-monorepo
+
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        id: semantic
+        with:
+          working_directory: packages/hypergen-monorepo
+          extra_plugins: |
+            @semantic-release/changelog@6.0.0
+            @semantic-release/git@10.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Publish job - publishes to npm after successful release
+  publish:
+    name: Publish to npm
+    needs: [test, release]
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.released == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: packages/hypergen-monorepo
+
+      - name: Build package
+        run: bun run build
+        working-directory: packages/hypergen-monorepo
+
+      - name: Publish to npm
+        run: npm publish
+        working-directory: packages/hypergen-monorepo
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.release.outputs.version }}
+          release_name: Release v${{ needs.release.outputs.version }}
+          body: |
+            Released @hypergen/monorepo-pack v${{ needs.release.outputs.version }}
+            
+            ## Installation
+            ```bash
+            npm install -g @hypergen/monorepo-pack
+            # or
+            bun add -g @hypergen/monorepo-pack
+            ```
+            
+            ## Usage
+            ```bash
+            hypergen monorepo new my-project --name=my-project
+            ```
+            
+            See [CHANGELOG.md](./CHANGELOG.md) for details.
+          draft: false
+          prerelease: false

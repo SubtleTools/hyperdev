@@ -1,0 +1,11 @@
+# Task ID: 1
+# Title: NPM Convention Implementation - Core Detection Logic
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Update isHypergenPackage() method to name-based detection only, supporting hypergen-*, @username/hypergen-*, and @hypergen/template-* patterns
+# Details:
+Remove existing keyword, hypergen field, and 'generator' detection methods. Implement clean name-based pattern matching for NPM packages following the established conventions.
+
+# Test Strategy:
+Unit tests for all three naming patterns, regression tests to ensure old detection methods are removed

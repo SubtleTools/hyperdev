@@ -1,0 +1,305 @@
+name: hypergen-monorepo
+description: Generate Moon-based TypeScript monorepos with configurable tooling
+version: 1.0.0
+tags:
+  - monorepo
+  - typescript
+  - moon
+  - tooling
+author: Hypergen Team
+license: MIT
+
+# Template metadata
+type: package
+engine: ejs
+target: monorepo
+
+# Interactive configuration prompts with comprehensive validation
+variables:
+  name:
+    type: string
+    required: true
+    description: "Monorepo project name (alphanumeric, hyphens, underscores)"
+    pattern: "^[a-zA-Z][a-zA-Z0-9-_]*$"
+    examples: ["my-monorepo", "company_platform", "awesome-project"]
+    
+  description:
+    type: string
+    required: false
+    description: "Brief description of your monorepo project"
+    default: "A TypeScript monorepo powered by Moon"
+    
+  packageManager:
+    type: enum
+    values: ["bun", "npm", "yarn", "pnpm"]
+    default: "bun"
+    description: "Package manager for dependency management"
+    help: |
+      Choose your package manager:
+      • bun (recommended): Fastest performance, modern features
+      • npm: Most compatible, widely supported
+      • yarn: Good performance, workspace features
+      • pnpm: Disk space efficient, fast installs
+    
+  linter:
+    type: enum
+    values: ["eslint", "biome"]
+    default: "eslint"
+    description: "Code linting and static analysis tool"
+    help: |
+      Choose your linter:
+      • ESLint: Mature ecosystem, extensive plugin support
+      • Biome: Ultra-fast, unified toolchain (linting + formatting)
+      
+  formatter:
+    type: enum
+    values: ["prettier", "dprint", "biome-integrated"]
+    default: "prettier"
+    description: "Code formatting tool"
+    help: |
+      Choose your formatter:
+      • Prettier: Most popular, excellent IDE support
+      • dprint: Fast Rust-based formatter
+      • biome-integrated: Use Biome's built-in formatter (only with Biome linter)
+    conditional: true
+    
+  testFramework:
+    type: enum
+    values: ["vitest", "bun-test", "jest"]
+    default: "vitest"
+    description: "Testing framework for unit and integration tests"
+    help: |
+      Choose your test framework:
+      • Vitest: Fast, Vite-powered, modern features
+      • Bun Test: Built-in to Bun, zero config
+      • Jest: Most mature, extensive ecosystem
+    
+  preset:
+    type: enum
+    values: ["custom", "modern-bun", "traditional-node", "performance", "enterprise", "minimal"]
+    default: "custom"
+    description: "Pre-configured tool combinations or custom selection"
+    help: |
+      Preset configurations:
+      • custom: Use your individual tool selections above
+      • modern-bun: Bun + Biome + Bun Test (fastest setup)
+      • traditional-node: npm + ESLint + Prettier + Jest (most compatible)
+      • performance: pnpm + Biome + Vitest (optimized for speed)
+      • enterprise: yarn + ESLint + Prettier + Jest (stable, mature tools)
+      • minimal: bun + Biome integrated (simplest setup)
+    
+  initializeGit:
+    type: boolean
+    default: true
+    description: "Initialize Git repository with initial commit"
+    
+  setupGitHooks:
+    type: boolean
+    default: true
+    description: "Setup Git hooks for pre-commit linting and formatting"
+    
+  includeVSCodeSettings:
+    type: boolean
+    default: true
+    description: "Include VS Code workspace settings and extensions"
+    
+  includeGitHubActions:
+    type: boolean
+    default: false
+    description: "Include GitHub Actions CI/CD workflows"
+    
+  includeDocumentation:
+    type: boolean
+    default: true
+    description: "Generate comprehensive README and contributing guides"
+
+# Tool compatibility validation matrix
+compatibility:
+  # Formatter compatibility with linters
+  formatter:
+    conditions:
+      - if: "linter === 'biome'"
+        then: "formatter === 'biome-integrated' || formatter === 'prettier'"
+        message: "Biome linter works best with its integrated formatter or Prettier"
+        
+      - if: "linter === 'eslint'"
+        then: "formatter !== 'biome-integrated'"
+        message: "Biome integrated formatter requires Biome linter"
+        
+  # Test framework compatibility with package managers
+  testFramework:
+    conditions:
+      - if: "testFramework === 'bun-test' && packageManager !== 'bun'"
+        then: "packageManager === 'bun'"
+        message: "Bun Test requires Bun as package manager"
+        warning: true
+
+# Preset configurations override individual selections
+presets:
+  modern-bun:
+    description: "Ultra-modern stack with Bun ecosystem"
+    variables:
+      packageManager: "bun"
+      linter: "biome"
+      formatter: "biome-integrated"
+      testFramework: "bun-test"
+      
+  traditional-node:
+    description: "Stable, widely-supported Node.js stack"
+    variables:
+      packageManager: "npm"
+      linter: "eslint"
+      formatter: "prettier"
+      testFramework: "jest"
+      
+  performance:
+    description: "Optimized for build and runtime performance"
+    variables:
+      packageManager: "pnpm"
+      linter: "biome"
+      formatter: "dprint"
+      testFramework: "vitest"
+      
+  enterprise:
+    description: "Enterprise-ready with mature, stable tools"
+    variables:
+      packageManager: "yarn"
+      linter: "eslint"
+      formatter: "prettier"
+      testFramework: "jest"
+      includeGitHubActions: true
+      setupGitHooks: true
+      
+  minimal:
+    description: "Minimal setup with unified tooling"
+    variables:
+      packageManager: "bun"
+      linter: "biome"
+      formatter: "biome-integrated"
+      testFramework: "bun-test"
+      includeVSCodeSettings: false
+      includeDocumentation: false
+
+# Conditional template inclusion based on configuration
+conditions:
+  # Package manager specific files
+  - pattern: "**/bun.lockb.ejs.t"
+    condition: "packageManager === 'bun'"
+    
+  - pattern: "**/package-lock.json.ejs.t"
+    condition: "packageManager === 'npm'"
+    
+  - pattern: "**/yarn.lock.ejs.t"
+    condition: "packageManager === 'yarn'"
+    
+  - pattern: "**/pnpm-lock.yaml.ejs.t"
+    condition: "packageManager === 'pnpm'"
+    
+  # Linter configurations
+  - pattern: "**/.eslintrc*.ejs.t"
+    condition: "linter === 'eslint'"
+    
+  - pattern: "**/biome.json.ejs.t"
+    condition: "linter === 'biome'"
+    
+  # Formatter configurations
+  - pattern: "**/.prettierrc*.ejs.t"
+    condition: "formatter === 'prettier'"
+    
+  - pattern: "**/dprint.json.ejs.t"
+    condition: "formatter === 'dprint'"
+    
+  # Test framework configurations
+  - pattern: "**/vitest.config*.ejs.t"
+    condition: "testFramework === 'vitest'"
+    
+  - pattern: "**/jest.config*.ejs.t"
+    condition: "testFramework === 'jest'"
+    
+  - pattern: "**/bunfig.toml.ejs.t"
+    condition: "testFramework === 'bun-test' && packageManager === 'bun'"
+    
+  - pattern: "**/bun.test.ts.ejs.t"
+    condition: "testFramework === 'bun-test'"
+    
+  # Optional features
+  - pattern: "**/.vscode/**"
+    condition: "includeVSCodeSettings === true"
+    
+  - pattern: "**/.github/**"
+    condition: "includeGitHubActions === true"
+    
+  - pattern: "**/husky/**"
+    condition: "setupGitHooks === true"
+
+# Template examples for testing and documentation
+examples:
+  - title: "Modern Bun Stack"
+    description: "Ultra-modern monorepo with Bun ecosystem"
+    variables:
+      name: "my-bun-monorepo"
+      preset: "modern-bun"
+      
+  - title: "Traditional Enterprise Setup"
+    description: "Enterprise-ready monorepo with stable tools"
+    variables:
+      name: "enterprise-platform"
+      preset: "enterprise"
+      includeGitHubActions: true
+      
+  - title: "Performance-Optimized"
+    description: "Fast builds and runtime with performance tools"
+    variables:
+      name: "performance-monorepo"
+      preset: "performance"
+      
+  - title: "Custom Configuration"
+    description: "Mix and match tools for specific needs"
+    variables:
+      name: "custom-monorepo"
+      preset: "custom"
+      packageManager: "yarn"
+      linter: "eslint"
+      formatter: "prettier"
+      testFramework: "vitest"
+      includeGitHubActions: true
+
+# Template actions for validation and setup
+actions:
+  - name: validateCompatibility
+    description: "Validate tool compatibility and warn about conflicts"
+    timing: pre
+    
+  - name: applyPreset
+    description: "Apply preset configuration if selected"
+    timing: pre
+    
+  - name: setupDependencies
+    description: "Configure package.json dependencies based on selections"
+    timing: post
+    
+  - name: setupGitRepository
+    description: "Initialize Git repository and setup hooks if requested"
+    timing: post
+    
+  - name: generateDocumentation
+    description: "Generate README and setup guides"
+    timing: post
+
+# Template dependencies
+dependencies:
+  "@hypergen/core": "^8.0.0"
+  "@hypergen/moon-integration": "^1.0.0"
+
+# Files to include/exclude from template output
+files:
+  include:
+    - "_templates/**/*"
+    - "lib/**/*"
+    - "docs/**/*"
+  exclude:
+    - "src/**/*"
+    - "tests/**/*"
+    - "node_modules/**/*"
+    - "*.log"
+    - ".DS_Store"

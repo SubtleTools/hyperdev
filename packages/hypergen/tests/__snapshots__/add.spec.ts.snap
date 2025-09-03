@@ -1,0 +1,19 @@
+// Bun Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`add should add a new file 1`] = `
+{
+  "status": "added",
+  "subject": "app/hello.js",
+  "timing": Any<Number>,
+  "type": "add",
+}
+`;
+
+exports[`add should overwrite an existing file when confirmed 1`] = `
+{
+  "status": "added",
+  "subject": "app/hello.js",
+  "timing": Any<Number>,
+  "type": "add",
+}
+`;

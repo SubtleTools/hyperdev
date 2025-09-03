@@ -1,0 +1,92 @@
+title: "Documentation Site"
+description: "Astro/Starlight documentation site with TypeDoc integration for TypeScript projects"
+
+variables:
+  projectFolder:
+    type: "string"
+    required: false
+    prompt: "Project folder name (where all files will be generated)"
+    default: "my-docs-site"
+    order: 1
+
+
+  projectName:
+    type: "string"
+    required: true
+    prompt: "Project name for the documentation site"
+    order: 2
+
+  projectDescription:
+    type: "string"
+    required: true
+    prompt: "Project description"
+    order: 3
+
+  siteUrl:
+    type: "string"
+    required: false
+    prompt: "Site URL (e.g., https://example.com)"
+    default: "https://localhost:4321"
+    order: 4
+
+  githubRepo:
+    type: "string"
+    required: false
+    prompt: "GitHub repository URL (optional)"
+    order: 5
+
+  enableTypedoc:
+    type: "boolean"
+    required: false
+    prompt: "Enable TypeDoc API documentation?"
+    default: true
+    order: 6
+
+  entryPoint:
+    type: "string"
+    required: false
+    prompt: "TypeScript entry point for API docs (e.g., src/index.ts)"
+    default: "src/index.ts"
+    order: 7
+
+  enableOpenAPI:
+    type: "boolean"
+    required: false
+    prompt: "Enable OpenAPI/Swagger documentation?"
+    default: false
+    order: 8
+
+  enableKeyboardShortcuts:
+    type: "boolean"
+    required: false
+    prompt: "Enable keyboard shortcuts documentation (starlight-kbd)?"
+    default: false
+    order: 9
+
+  enableAutoSidebar:
+    type: "boolean"
+    required: false
+    prompt: "Enable automatic sidebar generation?"
+    default: false
+    order: 10
+
+  enableScrollToTop:
+    type: "boolean"
+    required: false
+    prompt: "Enable scroll-to-top button?"
+    default: true
+    order: 11
+
+  enableChangelogs:
+    type: "boolean"
+    required: false
+    prompt: "Enable changelog documentation?"
+    default: false
+    order: 12
+
+  enableObsidian:
+    type: "boolean"
+    required: false
+    prompt: "Enable Obsidian vault integration?"
+    default: false
+    order: 13

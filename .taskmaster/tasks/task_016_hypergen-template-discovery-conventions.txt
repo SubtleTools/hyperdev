@@ -1,0 +1,11 @@
+# Task ID: 16
+# Title: Legacy System Removal
+# Status: pending
+# Dependencies: 1, 2, 4
+# Priority: high
+# Description: Remove old 4-method detection system (keywords, hypergen field, generator detection)
+# Details:
+Clean removal of all legacy detection methods. Update existing template examples to use new conventions. No backward compatibility required.
+
+# Test Strategy:
+Regression tests to ensure old methods are completely removed, compatibility validation

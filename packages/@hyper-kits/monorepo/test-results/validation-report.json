@@ -1,0 +1,1458 @@
+{
+  "timestamp": "2025-08-31T09:26:53.611Z",
+  "totalCombinations": 72,
+  "validCombinations": 45,
+  "invalidCombinations": 27,
+  "combinationsWithWarnings": 36,
+  "validationResults": [
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "bun-test"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "bun-test"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "vitest"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "jest"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "bun-test"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "bun-test"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "bun-test"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "bun",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "vitest"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Biome integrated formatter can only be used with Biome linter",
+        "Bun Test framework requires Bun package manager",
+        "eslint linter is incompatible with biome-integrated formatter",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\"",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "jest"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "npm",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "vitest"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Biome integrated formatter can only be used with Biome linter",
+        "Bun Test framework requires Bun package manager",
+        "eslint linter is incompatible with biome-integrated formatter",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\"",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "jest"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "yarn",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "prettier",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "dprint",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "dprint + ESLint combination may have overlapping rules - consider configuration review"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "vitest"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Biome integrated formatter can only be used with Biome linter",
+        "Bun Test framework requires Bun package manager",
+        "eslint linter is incompatible with biome-integrated formatter",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\"",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "eslint",
+        "formatter": "biome-integrated",
+        "testFramework": "jest"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Biome integrated formatter can only be used with Biome linter",
+        "eslint linter is incompatible with biome-integrated formatter"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Biome integrated formatter: Use linter: \"biome\"",
+        "Alternatively: Use formatter: \"prettier\" with ESLint"
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "prettier",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with Prettier formatter reduces performance benefits",
+        "Using Biome linter with Prettier formatter - consider Biome integrated formatter for better performance"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": true,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "dprint",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": true,
+      "errors": [],
+      "warnings": [
+        "Using Biome linter with dprint formatter may have configuration overlaps",
+        "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain"
+      ],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "vitest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "bun-test"
+      },
+      "isValid": false,
+      "hasWarnings": false,
+      "errors": [
+        "Bun Test requires Bun as the package manager",
+        "Bun Test framework requires Bun package manager",
+        "bun-test requires one of these package managers: bun"
+      ],
+      "warnings": [],
+      "recommendations": [
+        "Consider using a pre-configured preset:",
+        "• \"modern-bun\" - Bun + Biome + Bun Test (fastest setup)",
+        "• \"traditional-node\" - npm + ESLint + Prettier + Jest (most compatible)",
+        "• \"performance\" - pnpm + Biome + Vitest (optimized for speed)",
+        "• \"enterprise\" - yarn + ESLint + Prettier + Jest (stable, mature tools)",
+        "For Bun Test: Use packageManager: \"bun\""
+      ]
+    },
+    {
+      "combination": {
+        "packageManager": "pnpm",
+        "linter": "biome",
+        "formatter": "biome-integrated",
+        "testFramework": "jest"
+      },
+      "isValid": true,
+      "hasWarnings": false,
+      "errors": [],
+      "warnings": [],
+      "recommendations": []
+    }
+  ],
+  "matrix": {
+    "packageManagers": [
+      "bun",
+      "npm",
+      "yarn",
+      "pnpm"
+    ],
+    "linters": [
+      "eslint",
+      "biome"
+    ],
+    "formatters": [
+      "prettier",
+      "dprint",
+      "biome-integrated"
+    ],
+    "testFrameworks": [
+      "vitest",
+      "bun-test",
+      "jest"
+    ]
+  },
+  "presetValidation": {
+    "modern-bun": {
+      "valid": true,
+      "issues": []
+    },
+    "traditional-node": {
+      "valid": true,
+      "issues": []
+    },
+    "performance": {
+      "valid": true,
+      "issues": [
+        {
+          "severity": "warning",
+          "code": "BIOME_DPRINT_OVERLAP",
+          "message": "Using Biome linter with dprint formatter may have configuration overlaps",
+          "fix": "Consider using \"biome-integrated\" formatter for unified configuration",
+          "affectedTools": [
+            "biome",
+            "dprint"
+          ]
+        },
+        {
+          "severity": "warning",
+          "code": "LINTER_FORMATTER_WARNING",
+          "message": "Using Biome linter with dprint formatter - consider Biome integrated formatter for unified toolchain",
+          "affectedTools": [
+            "biome",
+            "dprint"
+          ]
+        }
+      ]
+    },
+    "enterprise": {
+      "valid": true,
+      "issues": []
+    },
+    "minimal": {
+      "valid": true,
+      "issues": []
+    }
+  },
+  "recommendations": {
+    "fastestCombinations": [
+      "bun+biome+biome-integrated+bun-test"
+    ],
+    "mostCompatibleCombinations": [
+      "bun+eslint+prettier+vitest",
+      "bun+eslint+prettier+bun-test",
+      "bun+eslint+prettier+jest",
+      "bun+biome+biome-integrated+vitest",
+      "bun+biome+biome-integrated+bun-test"
+    ],
+    "enterpriseRecommendations": [
+      "yarn+eslint+prettier+vitest",
+      "yarn+eslint+prettier+jest",
+      "pnpm+eslint+prettier+vitest"
+    ],
+    "performanceRecommendations": [
+      "bun+biome+prettier+vitest",
+      "bun+biome+prettier+bun-test",
+      "bun+biome+dprint+vitest"
+    ]
+  },
+  "statistics": {
+    "byPackageManager": {
+      "bun": 15,
+      "npm": 10,
+      "yarn": 10,
+      "pnpm": 10
+    },
+    "byLinter": {
+      "eslint": 18,
+      "biome": 27
+    },
+    "byFormatter": {
+      "prettier": 18,
+      "dprint": 18,
+      "biome-integrated": 9
+    },
+    "byTestFramework": {
+      "vitest": 20,
+      "bun-test": 5,
+      "jest": 20
+    }
+  }
+}

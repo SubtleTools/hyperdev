@@ -1,0 +1,11 @@
+# Task ID: 17
+# Title: Documentation and Migration Guide
+# Status: pending
+# Dependencies: 16
+# Priority: medium
+# Description: Create comprehensive documentation for new template discovery conventions and migration from old system
+# Details:
+Document publishing guidelines for template authors, migration documentation from 4-method system, API reference for new conventions, and security best practices.
+
+# Test Strategy:
+Documentation completeness review, migration guide validation, community feedback integration

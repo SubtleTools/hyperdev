@@ -1,0 +1,11 @@
+# Task ID: 4
+# Title: GitHub Topic-based Discovery
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Implement GitHub API search for repositories with 'hypergen-template' topic
+# Details:
+Use GitHub API: GET /search/repositories?q=topic:hypergen-template for repository discovery. Connect to existing URL resolution system.
+
+# Test Strategy:
+Integration tests with GitHub API, repository structure validation tests

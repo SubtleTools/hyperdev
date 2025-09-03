@@ -1,0 +1,37 @@
+{
+  "name": "hypergen-starlight",
+  "version": "1.0.0",
+  "description": "Hypergen template for creating Astro/Starlight documentation sites with TypeDoc integration",
+  "keywords": [
+    "hypergen",
+    "template",
+    "astro",
+    "starlight",
+    "documentation",
+    "typedoc",
+    "docs-generator"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SubtleTools/hypergen-starlight.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SubtleTools/hypergen-starlight/issues"
+  },
+  "homepage": "https://github.com/SubtleTools/hypergen-starlight#readme",
+  "author": "SubtleTools",
+  "license": "MIT",
+  "files": [
+    "_templates/"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "peerDependencies": {
+    "hypergen": ">=8.0.0"
+  }
+}

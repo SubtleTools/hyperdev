@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: NPM Registry API Integration
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Implement NPM Registry API search with caching for template discovery
+# Details:
+Use NPM Registry API: https://registry.npmjs.org/-/v1/search?text=<pattern> for searching packages. Implement search patterns for name-based matching and add caching layer for performance.
+
+# Test Strategy:
+Integration tests with actual NPM registry, cache validation tests, rate limiting tests
