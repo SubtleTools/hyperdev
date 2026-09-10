@@ -6,7 +6,9 @@ argument-hint: "[space-path]"
 
 # Audit
 
-Read-only report on a space's health. Changes nothing.
+Read-only report on a space's health. Changes nothing. In a multi-repo
+space, it iterates every repo under `code/<slug>/` and reports worktree and
+branch findings per repo.
 
 ## Usage
 
