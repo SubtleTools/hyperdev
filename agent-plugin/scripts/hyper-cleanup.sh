@@ -61,10 +61,46 @@ if [[ -z "$root" ]]; then
 fi
 root="$(cd "$root" && pwd)"
 
-if ! git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
+layout="$(space_layout "$root" 2>/dev/null)" || layout=""
+
+# A multi-repo space root is deliberately not a git repository — the repos
+# live under code/<slug>. Only the bare layout must answer to git here.
+if [[ "$layout" != multi ]] && ! git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
   echo "not a git repository: $root" >&2
   exit 1
 fi
+
+# The repos to iterate, and the id prefix each one contributes. A bare space
+# is one unnamed repo at the root with no prefix, so single-repo ids stay
+# exactly as they were; a multi-repo space names every id with its slug.
+#
+#   bare  -> REPO_DIRS=("$root")            REPO_SLUGS=("")
+#   multi -> REPO_DIRS=(.../code/<slug>)    REPO_SLUGS=(<slug>)
+REPO_DIRS=()
+REPO_SLUGS=()
+if [[ "$layout" == multi ]]; then
+  while IFS= read -r s; do
+    [[ -n "$s" ]] || continue
+    REPO_DIRS+=("$root/code/$s")
+    REPO_SLUGS+=("$s")
+  done < <(space_repos "$root")
+else
+  REPO_DIRS=("$root")
+  REPO_SLUGS=("")
+fi
+
+# repo_dir_for_slug <slug> — the repo dir an id's slug names, or failure when
+# no such repo exists. "" is the bare space's single unnamed repo.
+repo_dir_for_slug() {
+  local want="$1" i
+  for i in "${!REPO_SLUGS[@]}"; do
+    if [[ "${REPO_SLUGS[$i]}" == "$want" ]]; then
+      echo "${REPO_DIRS[$i]}"
+      return 0
+    fi
+  done
+  return 1
+}
 
 if [[ $interactive -eq 1 && ${#delete_ids[@]} -gt 0 ]]; then
   echo "-i and --delete are mutually exclusive: interactive mode asks, --delete already knows" >&2
@@ -87,23 +123,28 @@ size_of() { du -sh "$1" 2>/dev/null | cut -f1 || echo '?'; }
 # Registered worktree paths, compared physically (macOS /var vs /private/var).
 # A live registered worktree must never be deleted, whatever its .git looks
 # like at the moment of the check.
+# Checked against every repo in the space: a path registered by any of them is
+# live, whichever repo owns it.
 is_registered_worktree() {
-  local target p
+  local target p rd
   target="$(cd "$1" 2>/dev/null && pwd -P)" || target="$1"
-  while IFS= read -r p; do
-    [[ -n "$p" ]] || continue
-    p="$(cd "$p" 2>/dev/null && pwd -P || echo "$p")"
-    [[ "$p" == "$target" ]] && return 0
-  done < <(git --git-dir="$root/.git" worktree list --porcelain 2>/dev/null \
-             | sed -n 's/^worktree //p')
+  for rd in "${REPO_DIRS[@]}"; do
+    while IFS= read -r p; do
+      [[ -n "$p" ]] || continue
+      p="$(cd "$p" 2>/dev/null && pwd -P || echo "$p")"
+      [[ "$p" == "$target" ]] && return 0
+    done < <(git --git-dir="$rd/.git" worktree list --porcelain 2>/dev/null \
+               | sed -n 's/^worktree //p')
+  done
   return 1
 }
 
 # Same classification hyper-audit.sh uses for worktrees/ entries: live,
 # orphan (a .git file whose gitdir is gone), or leftover build output with no
 # .git at all. Cleanup adds "missing" and treats anything else as live.
+# classify_worktree_entry <name> [repo-dir]
 classify_worktree_entry() {
-  local w="$root/worktrees/$1" wgd
+  local w="${2:-$root}/worktrees/$1" wgd
   [[ -d "$w" ]] || { echo missing; return 0; }
   if [[ ! -e "$w/.git" ]]; then
     echo leftover
@@ -116,16 +157,31 @@ classify_worktree_entry() {
   fi
 }
 
+# branch_exists <name> [repo-dir]
 branch_exists() {
-  git --git-dir="$root/.git" show-ref --verify -q "refs/heads/$1"
+  git --git-dir="${2:-$root}/.git" show-ref --verify -q "refs/heads/$1"
 }
 
 # "[gone]" from %(upstream:track) — the same signal audit reads.
+# branch_upstream_gone <name> [repo-dir]
 branch_upstream_gone() {
   local t
-  t="$(git --git-dir="$root/.git" for-each-ref \
+  t="$(git --git-dir="${2:-$root}/.git" for-each-ref \
          --format='%(upstream:track)' "refs/heads/$1" 2>/dev/null)" || return 1
   [[ "$t" == "[gone]" ]]
+}
+
+# Split a worktree:/branch: id name into slug and bare name. In a multi-repo
+# space the id carries the slug ("worktree:<slug>/<name>"); in a bare space it
+# never does, so single-repo ids keep working unchanged. Sets id_slug and
+# id_name.
+split_slug_name() {
+  id_slug=""
+  id_name="$1"
+  if [[ "$layout" == multi && "$1" == */* ]]; then
+    id_slug="${1%%/*}"
+    id_name="${1#*/}"
+  fi
 }
 
 # Entry names for worktree:/parked: ids are single path components under a
@@ -148,16 +204,21 @@ if [[ ${#delete_ids[@]} -eq 0 ]]; then
   cand_ids=()
   cand() { cand_ids+=("$1"); lines+=("$(printf '%-26s %-8s %s' "$1" "$2" "$3")"); }
 
-  if [[ -d "$root/worktrees" ]]; then
-    for w in "$root/worktrees"/*/; do
+  # One pass per repo. The id gains a "<slug>/" prefix only in a multi-repo
+  # space, so ids in a single-repo space are byte-identical to before.
+  for i in "${!REPO_DIRS[@]}"; do
+    rd="${REPO_DIRS[$i]}"
+    pfx="${REPO_SLUGS[$i]:+${REPO_SLUGS[$i]}/}"
+    [[ -d "$rd/worktrees" ]] || continue
+    for w in "$rd/worktrees"/*/; do
       [[ -d "$w" ]] || continue
       wname="$(basename "$w")"
-      case "$(classify_worktree_entry "$wname")" in
-        orphan)   cand "worktree:$wname" "$(size_of "$w")" "ORPHANED worktree — gitdir missing" ;;
-        leftover) cand "worktree:$wname" "$(size_of "$w")" "no .git — leftover build output" ;;
+      case "$(classify_worktree_entry "$wname" "$rd")" in
+        orphan)   cand "worktree:$pfx$wname" "$(size_of "$w")" "ORPHANED worktree — gitdir missing" ;;
+        leftover) cand "worktree:$pfx$wname" "$(size_of "$w")" "no .git — leftover build output" ;;
       esac
     done
-  fi
+  done
 
   if [[ -d "$root/.claude/worktrees" ]]; then
     for w in "$root/.claude/worktrees"/*/; do
@@ -174,12 +235,16 @@ if [[ ${#delete_ids[@]} -eq 0 ]]; then
   [[ -f "$preflight_file" ]] \
     && cand "evidence:preflight" "$(size_of "$preflight_file")" ".hyper-convert.preflight — conversion capture; reconcile before deleting"
 
-  while IFS= read -r b; do
-    [[ -n "$b" ]] || continue
-    cand "branch:$b" "-" "local branch whose upstream is gone from the remote"
-  done < <(git --git-dir="$root/.git" for-each-ref \
-             --format='%(refname:short) %(upstream:track)' refs/heads 2>/dev/null \
-           | sed -n 's/ \[gone\]$//p' || true)
+  for i in "${!REPO_DIRS[@]}"; do
+    rd="${REPO_DIRS[$i]}"
+    pfx="${REPO_SLUGS[$i]:+${REPO_SLUGS[$i]}/}"
+    while IFS= read -r b; do
+      [[ -n "$b" ]] || continue
+      cand "branch:$pfx$b" "-" "local branch whose upstream is gone from the remote"
+    done < <(git --git-dir="$rd/.git" for-each-ref \
+               --format='%(refname:short) %(upstream:track)' refs/heads 2>/dev/null \
+             | sed -n 's/ \[gone\]$//p' || true)
+  done
 
   if [[ -d "$root/scratch" ]]; then
     # .what-goes-here is scaffold, not user content — a pristine scratch/ is
@@ -244,14 +309,19 @@ for id in "${delete_ids[@]}"; do
 
   case "$class" in
     worktree)
-      if ! valid_entry_name "$name"; then
+      split_slug_name "$name"
+      if ! rd="$(repo_dir_for_slug "$id_slug")"; then
+        refuse "$id" "no repo '$id_slug' in this space"
+        continue
+      fi
+      if ! valid_entry_name "$id_name"; then
         refuse "$id" "invalid entry name"
         continue
       fi
-      w="$root/worktrees/$name"
-      kind="$(classify_worktree_entry "$name")"
+      w="$rd/worktrees/$id_name"
+      kind="$(classify_worktree_entry "$id_name" "$rd")"
       if [[ "$kind" == "missing" ]]; then
-        refuse "$id" "no such entry under worktrees/"
+        refuse "$id" "no such entry under ${id_slug:+code/$id_slug/}worktrees/"
         continue
       fi
       if [[ "$kind" == "live" ]] || is_registered_worktree "$w"; then
@@ -263,7 +333,7 @@ for id in "${delete_ids[@]}"; do
       # An orphan leaves stale metadata under .git/worktrees; drop it so
       # `git worktree list` matches reality again.
       if [[ "$kind" == "orphan" ]]; then
-        git --git-dir="$root/.git" worktree prune 2>/dev/null || true
+        git --git-dir="$rd/.git" worktree prune 2>/dev/null || true
       fi
       echo "deleted $id ($sz)"
       deleted=$((deleted + 1))
@@ -320,22 +390,34 @@ for id in "${delete_ids[@]}"; do
       ;;
 
     branch)
-      if ! git check-ref-format --branch "$name" >/dev/null 2>&1; then
+      # A branch name may itself contain slashes (feat/x), so the slug is
+      # split off only when it names a real repo — otherwise the whole string
+      # is the branch name in the space's single repo.
+      split_slug_name "$name"
+      if ! rd="$(repo_dir_for_slug "$id_slug")"; then
+        if [[ "$layout" == multi ]]; then
+          refuse "$id" "no repo '$id_slug' in this space"
+          continue
+        fi
+        rd="$root"
+        id_name="$name"
+      fi
+      if ! git check-ref-format --branch "$id_name" >/dev/null 2>&1; then
         refuse "$id" "invalid branch name"
         continue
       fi
-      if ! branch_exists "$name"; then
+      if ! branch_exists "$id_name" "$rd"; then
         refuse "$id" "no such local branch"
         continue
       fi
-      if ! branch_upstream_gone "$name"; then
+      if ! branch_upstream_gone "$id_name" "$rd"; then
         refuse "$id" "upstream is not gone — not a cleanup candidate"
         continue
       fi
-      sha="$(git --git-dir="$root/.git" rev-parse --short "refs/heads/$name" 2>/dev/null || echo '?')"
+      sha="$(git --git-dir="$rd/.git" rev-parse --short "refs/heads/$id_name" 2>/dev/null || echo '?')"
       # -d only, never -D: git's merged-ness check is the safety here. If -d
       # refuses, the branch has commits nothing else reaches — a human call.
-      if out="$(git --git-dir="$root/.git" branch -d -- "$name" 2>&1)"; then
+      if out="$(git --git-dir="$rd/.git" branch -d -- "$id_name" 2>&1)"; then
         echo "deleted $id (was $sha)"
         deleted=$((deleted + 1))
       else

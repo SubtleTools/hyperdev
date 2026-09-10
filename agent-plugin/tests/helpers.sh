@@ -85,6 +85,35 @@ make_bare_space() {
   mkdir -p "$1/worktrees"
 }
 
+# make_multi_space <dir> [slug...] — a multi-repo space: no .git at the root,
+# a HYPER.md marker, and one code/<slug>/ per slug, each with its own bare
+# .git and a worktrees/<default-branch> checked out from a seeded commit.
+# Defaults to two slugs so tests exercise the plural case by default.
+make_multi_space() {
+  local root="$1"; shift
+  local slugs=("$@")
+  [[ ${#slugs[@]} -gt 0 ]] || slugs=(alpha beta)
+
+  mkdir -p "$root/code"
+  touch "$root/HYPER.md"
+
+  local slug seed
+  for slug in "${slugs[@]}"; do
+    mkdir -p "$root/code/$slug"
+    git init -q --bare "$root/code/$slug/.git"
+    # A worktree needs a commit to check out, so seed one through a throwaway
+    # checkout and fetch it into the bare repo.
+    seed="$root/.seed-$slug"
+    make_checkout "$seed"
+    git --git-dir="$root/code/$slug/.git" fetch -q "$seed" "refs/heads/main:refs/heads/main"
+    git --git-dir="$root/code/$slug/.git" symbolic-ref HEAD refs/heads/main
+    rm -rf "$seed"
+    mkdir -p "$root/code/$slug/worktrees"
+    git --git-dir="$root/code/$slug/.git" \
+      worktree add -q "$root/code/$slug/worktrees/main" main 2>/dev/null
+  done
+}
+
 finish() {
   echo "1..$_n"
   rm -rf "$FIX"

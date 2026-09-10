@@ -16,7 +16,11 @@ if [[ -z "$root" ]]; then
 fi
 root="$(cd "$root" && pwd)"
 
-if ! git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
+layout="$(space_layout "$root" 2>/dev/null)" || layout=""
+
+# A multi-repo space root is deliberately not a git repository — the repos
+# live under code/<slug>. Only the bare layout must answer to git here.
+if [[ "$layout" != multi ]] && ! git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
   echo "not a git repository: $root" >&2
   exit 0
 fi
@@ -31,14 +35,33 @@ warn()    { warnings+=("$1"); }
 info()    { infos+=("$1"); }
 
 echo "Space:  $root"
-echo "Layout: bare"
+echo "Layout: ${layout:-bare}"
+
+# The repos to scan, and the label each contributes to its findings. A bare
+# space is one unnamed repo at the root; a multi-repo space has one per slug,
+# and every finding is labelled with it so a report over several repos stays
+# readable.
+repo_dirs=()
+repo_slugs=()
+if [[ "$layout" == multi ]]; then
+  while IFS= read -r s; do
+    [[ -n "$s" ]] || continue
+    repo_dirs+=("$root/code/$s")
+    repo_slugs+=("$s")
+  done < <(space_repos "$root")
+  echo "Repos:  $(printf '%s\n' "${repo_slugs[@]+"${repo_slugs[@]}"}" | paste -sd, - | sed 's/,/, /g')"
+else
+  repo_dirs=("$root")
+  repo_slugs=("")
+fi
 
 # --- 1. Layout drift -------------------------------------------------------
 
-wt_abs="$root/worktrees"
-wt_rel="worktrees"
-
 for d in "${SPACE_DIRS[@]}"; do
+  # A multi-repo space has no worktrees/ at the root by design — each repo
+  # carries its own under code/<slug>/. Flagging its absence would report the
+  # correct layout as drift.
+  [[ "$layout" == multi && "$d" == worktrees ]] && continue
   [[ -d "$root/$d" ]] \
     || warn "missing $d/ — run hyper-adopt.sh --apply to scaffold"
 done
@@ -86,36 +109,48 @@ fi
 # copy lives there) — an entry is a live worktree, an orphan whose gitdir git
 # has already pruned, or leftover build output with no .git at all.
 live_worktrees=()
-if [[ -d "$wt_abs" ]]; then
-  for w in "$wt_abs"/*/; do
+for i in "${!repo_dirs[@]}"; do
+  rd="${repo_dirs[$i]}"
+  slug="${repo_slugs[$i]}"
+  # In a multi-repo space every path and every branch is prefixed with the
+  # slug that owns it; in a bare space the prefix is empty and the wording is
+  # unchanged from the single-repo report.
+  rwt_abs="$rd/worktrees"
+  rwt_rel="${slug:+code/$slug/}worktrees"
+  [[ -d "$rwt_abs" ]] || continue
+  for w in "$rwt_abs"/*/; do
     [[ -d "$w" ]] || continue
     wname="$(basename "$w")"
     if [[ ! -e "$w/.git" ]]; then
       wsize="$(du -sh "$w" 2>/dev/null | cut -f1 || echo '?')"
-      warn "$wt_rel/$wname ($wsize): no .git — leftover build output, not a worktree; safe to delete"
+      warn "$rwt_rel/$wname ($wsize): no .git — leftover build output, not a worktree; safe to delete"
     elif [[ -f "$w/.git" ]] \
          && wgd="$(sed -n 's/^gitdir: //p' "$w/.git" 2>/dev/null)" \
          && [[ -n "$wgd" && ! -d "$wgd" ]]; then
       wsize="$(du -sh "$w" 2>/dev/null | cut -f1 || echo '?')"
-      problem "$wt_rel/$wname ($wsize): ORPHANED worktree — gitdir missing; recover or delete"
+      problem "$rwt_rel/$wname ($wsize): ORPHANED worktree — gitdir missing; recover or delete"
     else
       wbranch="$(git -C "$w" branch --show-current 2>/dev/null || echo '?')"
-      info "$wt_rel/$wname: ok [$wbranch]"
+      info "$rwt_rel/$wname: ok [$wbranch]"
       live_worktrees+=("$w")
     fi
   done
-fi
+done
 
 # --- 3. Branches whose upstream is gone ------------------------------------
 
 # %(upstream:track) prints "[gone]" when the remote branch was deleted — same
 # signal as `git branch -vv | grep ': gone]'`, without parsing the `*` marker.
 # --git-dir needs no working tree, so a bare space works directly.
-while IFS= read -r line; do
-  [[ -n "$line" ]] && warn "branch '$line': upstream gone from remote — merged/deleted; delete locally if done"
-done < <(git --git-dir="$root/.git" for-each-ref \
-           --format='%(refname:short) %(upstream:track)' refs/heads 2>/dev/null \
-         | sed -n 's/ \[gone\]$//p' || true)
+for i in "${!repo_dirs[@]}"; do
+  rd="${repo_dirs[$i]}"
+  slug="${repo_slugs[$i]}"
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && warn "branch '${slug:+$slug/}$line': upstream gone from remote — merged/deleted; delete locally if done"
+  done < <(git --git-dir="$rd/.git" for-each-ref \
+             --format='%(refname:short) %(upstream:track)' refs/heads 2>/dev/null \
+           | sed -n 's/ \[gone\]$//p' || true)
+done
 
 # --- 4. Dirty worktrees ----------------------------------------------------
 

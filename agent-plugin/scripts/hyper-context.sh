@@ -8,6 +8,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/hyper-lib.sh" 2>/dev/null || exit 0
 
 root="$(find_space_root "$PWD")" || exit 0
 name="$(basename "$root")"
+layout="$(space_layout "$root" 2>/dev/null)" || layout=bare
 wt_abs="$root/worktrees"
 
 # Legacy (pre-rename) spaces may still carry the old marker and metadata dir;
@@ -28,7 +29,69 @@ fi
 # one of its worktrees to scan would report an arbitrary branch's toolchain.
 tree=""
 
-if [[ "$PWD" == "$wt_abs"/* ]]; then
+if [[ "$layout" == multi ]]; then
+  # Multi-repo: every position must name the layout, list the repos, and say
+  # where `wt switch` works — it resolves a repo from inside code/<slug>/ and
+  # nowhere else, which is the mistake this shape invites.
+  repos="$(space_repos "$root" | paste -sd, - | sed 's/,/, /g')"
+  [[ -n "$repos" ]] || repos="(none)"
+  slug="$(repo_slug_of "$root" "$PWD" 2>/dev/null)" || slug=""
+
+  if [[ -n "$slug" && "$PWD" == "$root/code/$slug/worktrees/"* ]]; then
+    rest="${PWD#"$root"/code/"$slug"/worktrees/}"
+    wt_name="${rest%%/*}"
+    tree="$root/code/$slug/worktrees/$wt_name"
+    cat <<EOF
+Worktree \`$wt_name\` of repo \`$slug\`, in multi-repo space $name ($root).
+Repos here: $repos. Normal git applies in this worktree.
+Space-level local-only dirs: data/, notes/, scratch/, bin/. Sibling worktrees
+of this repo are in $root/code/$slug/worktrees/.
+\`wt switch\` runs inside \`code/<slug>/\`, never from the space root.
+EOF
+
+  elif [[ -n "$slug" ]]; then
+    cat <<EOF
+Repo \`$slug\` of multi-repo space $name ($root) — cwd is the repo root, not a
+worktree. The .git here is bare; worktrees live in code/$slug/worktrees/<branch>.
+Repos here: $repos.
+
+- Do not run git commit/add here. cd into code/$slug/worktrees/<branch> first.
+- Create branches with $wt_make — from inside \`code/$slug/\`, which is where
+  \`wt switch\` resolves this repo.
+
+See $root/$marker.
+EOF
+
+  elif at_space_root; then
+    cat <<EOF
+Project space: $root (cwd is the space ROOT of a multi-repo space, not a worktree).
+
+The root itself is not a git repository — there is no .git and no worktrees/
+at this level, and nothing here is ever committed. Each repo lives in
+code/<slug>/ with its own bare .git and its own worktrees/<branch>.
+
+Repos here: $repos.
+
+- Do not run git commit/add here. cd into code/<slug>/worktrees/<branch> first.
+- Create branches with $wt_make, run from inside \`code/<slug>/\` — \`wt switch\`
+  does not resolve a repo from the space root.
+- New local-only files go in: data/ (dumps, fixtures), notes/ (briefs, docs),
+  scratch/ (disposable), bin/ (helper scripts) — not loose at the root.
+
+See $root/$marker.
+EOF
+
+  else
+    rel="${PWD#"$root"/}"
+    cat <<EOF
+In \`$rel/\` of multi-repo space $name ($root) — a local-only directory, not a
+worktree. Nothing here is committed or backed up. Code lives in
+$root/code/<slug>/worktrees/<branch>; repos here: $repos.
+\`wt switch\` runs inside \`code/<slug>/\`, never from the space root.
+EOF
+  fi
+
+elif [[ "$PWD" == "$wt_abs"/* ]]; then
   rest="${PWD#"$wt_abs"/}"
   wt_name="${rest%%/*}"
   tree="$wt_abs/$wt_name"

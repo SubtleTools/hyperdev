@@ -18,31 +18,92 @@ dir_purpose() {
   esac
 }
 
-# A space has exactly one shape: a bare .git at the root, worktrees in
-# worktrees/, local-only dirs beside them. Space files and project files never
-# share a directory — adopting an ordinary checkout means converting it.
+# A space has one of two shapes.
 #
-# space_layout <dir> prints "bare" or nothing.
+#   bare  — a bare .git at the root, worktrees in worktrees/, local-only dirs
+#           beside them. One repository per space.
+#   multi — the root is not a git repository at all; each tracked repository
+#           lives in code/<repo-slug>/ with its own bare .git and its own
+#           worktrees/. Local-only dirs sit at the root as usual.
 #
-# core.bare alone is not enough: a plain bare clone (a mirror, a hosting
-# remote) is not a space. Require the structure the docs promise — a
+# In both shapes space files and project files never share a directory —
+# adopting an ordinary checkout means converting it.
+#
+# space_layout <dir> prints "bare", "multi", or nothing.
+#
+# For bare, core.bare alone is not enough: a plain bare clone (a mirror, a
+# hosting remote) is not a space. Require the structure the docs promise — a
 # worktrees/ directory beside .git — or the explicit adoption marker.
+#
+# For multi the marker is mandatory: a directory holding some bare repos under
+# code/ is not self-identifying the way a bare root is, and guessing would
+# claim ordinary directories. The root must additionally have NO .git entry —
+# a root that is itself a repository is the bare shape (or a checkout), never
+# multi, whatever else sits under code/.
 space_layout() {
   local d="${1:-$PWD}"
-  [[ -d "$d/.git" ]] || return 1
-  [[ "$(git --git-dir="$d/.git" config --get core.bare 2>/dev/null)" == "true" ]] || return 1
   # HYPERDEV.md is the legacy marker (pre-rename); spaces adopted under the
   # old plugin name must keep being detected until adopt --apply migrates it.
-  if [[ -d "$d/worktrees" || -f "$d/HYPER.md" || -f "$d/HYPERDEV.md" ]]; then
-    echo bare
-    return 0
+  if [[ -d "$d/.git" ]]; then
+    [[ "$(git --git-dir="$d/.git" config --get core.bare 2>/dev/null)" == "true" ]] || return 1
+    if [[ -d "$d/worktrees" || -f "$d/HYPER.md" || -f "$d/HYPERDEV.md" ]]; then
+      echo bare
+      return 0
+    fi
+    return 1
   fi
+  # No .git entry of any kind (file or directory) — the only shape left is
+  # multi, and only with the marker plus at least one bare repo under code/.
+  [[ -e "$d/.git" ]] && return 1
+  [[ -f "$d/HYPER.md" || -f "$d/HYPERDEV.md" ]] || return 1
+  local r
+  for r in "$d"/code/*/; do
+    [[ -d "$r/.git" ]] || continue
+    if [[ "$(git --git-dir="$r/.git" config --get core.bare 2>/dev/null)" == "true" ]]; then
+      echo multi
+      return 0
+    fi
+  done
   return 1
 }
 
-# Where worktrees live for a given root. Always <root>/worktrees.
+# space_repos <root> — one repo slug per line, for a multi-repo space.
+# Prints nothing for a bare space (which has no slugs — its single repository
+# is the root itself). Discovery is by glob: code/<slug>/.git bare. There is
+# deliberately no config file to fall out of sync with the directories.
+space_repos() {
+  local d="${1:-$PWD}" r
+  for r in "$d"/code/*/; do
+    [[ -d "$r/.git" ]] || continue
+    [[ "$(git --git-dir="$r/.git" config --get core.bare 2>/dev/null)" == "true" ]] || continue
+    basename "$r"
+  done
+}
+
+# repo_slug_of <root> <path> — the slug of the repo containing <path>, when
+# <path> is at or under <root>/code/<slug>. Prints nothing otherwise (the
+# space root itself, a local-only dir, or a bare space have no slug).
+repo_slug_of() {
+  local root="$1" path="$2" rest
+  case "$path" in
+    "$root/code/"*) rest="${path#"$root"/code/}" ;;
+    *) return 1 ;;
+  esac
+  rest="${rest%%/*}"
+  [[ -n "$rest" ]] || return 1
+  echo "$rest"
+}
+
+# Where worktrees live for a given root. <root>/worktrees for a bare space;
+# <root>/code/<slug>/worktrees for a multi-repo space, which therefore needs
+# the slug — without one there is no single answer, so it is an error.
 worktrees_dir() {
-  local d="${1:-$PWD}"
+  local d="${1:-$PWD}" slug="${2:-}"
+  if [[ "$(space_layout "$d" 2>/dev/null)" == multi ]]; then
+    [[ -n "$slug" ]] || return 1
+    echo "$d/code/$slug/worktrees"
+    return 0
+  fi
   echo "$d/worktrees"
 }
 
@@ -65,6 +126,20 @@ find_space_root() {
   local d="${1:-$PWD}"
   while [[ "$d" != "/" ]]; do
     if is_space "$d"; then
+      # A repo of a multi-repo space looks exactly like a bare space on its
+      # own — bare .git with worktrees/ beside it — so the walk must not stop
+      # there. Only the enclosing multi-repo root is the space root; a repo
+      # dir is <root>/code/<slug>, two levels below a root that is itself a
+      # space. Checking the grandparent (rather than trusting the name "code")
+      # keeps the authority in space_layout.
+      local parent grandparent
+      parent="$(dirname "$d")"
+      grandparent="$(dirname "$parent")"
+      if [[ "$(basename "$parent")" == code ]] \
+         && [[ "$(space_layout "$grandparent" 2>/dev/null)" == multi ]]; then
+        d="$grandparent"
+        continue
+      fi
       echo "$d"
       return 0
     fi
@@ -81,7 +156,20 @@ at_space_root() {
   [[ "$root" == "$PWD" ]]
 }
 
+# write_hyper_md <root> <name> — write the marker/reference for whichever
+# layout the root actually has. Callers pass root and name only; the shape is
+# detected, never guessed, so an existing multi-repo space re-scaffolded by
+# adopt keeps its multi-repo documentation instead of being told it has a
+# bare .git and a worktrees/ it does not have.
 write_hyper_md() {
+  if [[ "$(space_layout "$1" 2>/dev/null)" == multi ]]; then
+    write_hyper_md_multi "$1" "$2"
+    return
+  fi
+  write_hyper_md_bare "$1" "$2"
+}
+
+write_hyper_md_bare() {
   local root="$1" name="$2"
   cat > "$root/HYPER.md" <<EOF
 # $name
@@ -109,6 +197,78 @@ nothing here is committed. The worktrees live in \`worktrees/\`.
 - \`scratch/\` is disposable. Anything you would miss belongs in \`data/\` or \`notes/\`.
 - Files here never reach the remote. Secrets are local-only by construction,
   but that also means nothing here is backed up.
+- Space memory lives in \`.hyper/memory/\`; \`MEMORY.md\` there is the index.
+  Tools without automatic memory loading should read it at session start.
+
+## Naming convention
+
+When the user says "hyper X" or "space X" (e.g. "hyper notes", "space data"),
+they mean the \`X/\` directory at the space root — never a same-named
+directory inside a worktree, even if one exists there too.
+EOF
+}
+
+# The default branch of a repo, read from the bare repo's HEAD. Prints "?"
+# when HEAD resolves to nothing (a repo with no commits yet) — a table cell
+# must always be filled, and "?" is honest where a guessed "main" would not be.
+repo_default_branch() {
+  local gitdir="$1" b
+  b="$(git --git-dir="$gitdir" symbolic-ref --short HEAD 2>/dev/null)" || b=""
+  [[ -n "$b" ]] || b="$(git --git-dir="$gitdir" config --get worktrunk.default-branch 2>/dev/null)" || b=""
+  echo "${b:-?}"
+}
+
+# write_hyper_md_multi <root> <name> — the multi-repo variant. The Repositories
+# table is built from space_repos, i.e. from the directories that actually
+# exist, so it cannot drift from the layout the way a hand-kept list would.
+# "What it is" is left for the user to fill in: the plugin can see a slug and
+# a branch, but not what the repository is for, and inventing a description
+# would be exactly the unverifiable output the detection rule forbids.
+write_hyper_md_multi() {
+  local root="$1" name="$2" slug rows=""
+  while IFS= read -r slug; do
+    [[ -n "$slug" ]] || continue
+    rows+="| \`$slug\` | _(describe this repo)_ | \`$(repo_default_branch "$root/code/$slug/.git")\` |"$'\n'
+  done < <(space_repos "$root")
+  [[ -n "$rows" ]] || rows="| _(none yet)_ | | |"$'\n'
+
+  cat > "$root/HYPER.md" <<EOF
+# $name
+
+Project **space**, multi-repo layout. The space root itself is not a git
+repository — nothing here is committed. Each tracked repository lives under
+\`code/<repo-slug>/\`, with its own bare \`.git\` and its own \`worktrees/\`.
+
+## Layout
+
+| Path | Purpose |
+|------|---------|
+| \`code/<repo-slug>/.git\` | bare repository for that repo (shared object store for its worktrees) |
+| \`code/<repo-slug>/worktrees/<branch>\` | $(dir_purpose worktrees) |
+| \`.claude/\` | Claude settings scoped to this project |
+| \`.hyper/\` | plugin metadata; space memory in \`.hyper/memory/\` |
+| \`data/\` | $(dir_purpose data) |
+| \`notes/\` | $(dir_purpose notes) |
+| \`scratch/\` | $(dir_purpose scratch) |
+| \`bin/\` | $(dir_purpose bin) |
+
+## Repositories
+
+| Slug | What it is | Default branch |
+|------|------------|----------------|
+${rows}
+## Rules
+
+- The space root is **not** a git repository. There is no \`.git\` and no
+  \`worktrees/\` here; both live one level down, per repo, under \`code/<slug>/\`.
+- Only commit from inside \`code/<slug>/worktrees/<branch>\`; never from the
+  space root or from a local-only directory.
+- Create worktrees with \`wt switch <branch>\`, never \`git worktree add\` by hand.
+  \`wt switch\` must be run from inside \`code/<slug>/\` — it does not resolve a
+  repo from the space root.
+- \`scratch/\` is disposable. Anything you would miss belongs in \`data/\` or \`notes/\`.
+- Files at the space root never reach the remote. Secrets are local-only by
+  construction, but that also means nothing here is backed up.
 - Space memory lives in \`.hyper/memory/\`; \`MEMORY.md\` there is the index.
   Tools without automatic memory loading should read it at session start.
 
@@ -318,8 +478,13 @@ ensure_worktrunk_config() {
 
 # Create the directory set. Idempotent: reports created vs already-present.
 scaffold_dirs() {
-  local root="$1" d
+  local root="$1" d layout
+  layout="$(space_layout "$root" 2>/dev/null)" || layout=""
   for d in "${SPACE_DIRS[@]}"; do
+    # A multi-repo space has no worktrees/ at the root — each repo carries its
+    # own under code/<slug>/. Creating one here would invent a directory the
+    # layout does not have, and audit would then have to explain it away.
+    [[ "$layout" == multi && "$d" == worktrees ]] && continue
     local target="$root/$d"
     if [[ -d "$target" ]]; then
       echo "  exists   $d/"

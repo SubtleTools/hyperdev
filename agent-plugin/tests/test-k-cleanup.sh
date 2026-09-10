@@ -176,4 +176,91 @@ rc=$?
 assert_eq "-i with --delete is refused" 1 "$rc"
 assert_contains "mutual-exclusion message" "$out" "mutually exclusive"
 
+# --- multi-repo spaces -----------------------------------------------------
+# Ids gain a "<slug>/" prefix so one id can never be ambiguous across repos;
+# the safety contract (re-verify, refuse live, -d only) is unchanged.
+
+m="$FIX/km"; make_multi_space "$m" alpha beta
+mkdir -p "$m/data" "$m/notes" "$m/scratch" "$m/bin"
+
+# Debris in both repos: an orphan in beta, a leftover in alpha.
+mkdir -p "$m/code/beta/worktrees/dead"
+printf 'gitdir: %s\n' "$FIX/nowhere/gitdirs/dead" > "$m/code/beta/worktrees/dead/.git"
+echo stale > "$m/code/beta/worktrees/dead/stale.txt"
+mkdir -p "$m/code/alpha/worktrees/buildout"
+echo artifact > "$m/code/alpha/worktrees/buildout/out.bin"
+
+# A gone branch in beta only.
+git init -q --bare "$FIX/km-remote.git"
+git --git-dir="$m/code/beta/.git" remote add origin "$FIX/km-remote.git"
+git --git-dir="$m/code/beta/.git" branch gone-in-beta main
+git --git-dir="$m/code/beta/.git" push -q -u origin gone-in-beta 2>/dev/null
+git --git-dir="$m/code/beta/.git" push -q origin --delete gone-in-beta 2>/dev/null
+git --git-dir="$m/code/beta/.git" fetch -qp origin 2>/dev/null
+
+# KM1: list mode — every id carries its slug, live worktrees are never listed
+before="$(find "$m" | sort)"
+out="$(bash "$CLEANUP" "$m" 2>&1)"
+rc=$?
+assert_eq "multi list mode exits 0" 0 "$rc"
+assert_contains "orphan listed with its slug"   "$out" "worktree:beta/dead"
+assert_contains "leftover listed with its slug" "$out" "worktree:alpha/buildout"
+assert_contains "gone branch listed with its slug" "$out" "branch:beta/gone-in-beta"
+assert_not_contains "alpha's live worktree is never a candidate" "$out" "worktree:alpha/main"
+assert_not_contains "beta's live worktree is never a candidate"  "$out" "worktree:beta/main"
+assert_eq "multi list mode deleted nothing" "$before" "$(find "$m" | sort)"
+
+# KM2: deleting a slugged orphan touches only that repo
+out="$(bash "$CLEANUP" "$m" --delete worktree:beta/dead 2>&1)"
+rc=$?
+assert_eq "slugged orphan delete exits 0" 0 "$rc"
+assert_contains "slugged orphan reported deleted" "$out" "deleted worktree:beta/dead"
+assert_ok "the orphan is gone" test ! -e "$m/code/beta/worktrees/dead"
+assert_ok "beta's live worktree untouched" test -f "$m/code/beta/worktrees/main/file.txt"
+assert_ok "alpha's leftover untouched" test -e "$m/code/alpha/worktrees/buildout"
+
+out="$(bash "$CLEANUP" "$m" --delete worktree:alpha/buildout 2>&1)"
+assert_contains "slugged leftover reported deleted" "$out" "deleted worktree:alpha/buildout"
+assert_ok "the leftover is gone" test ! -e "$m/code/alpha/worktrees/buildout"
+
+# KM3: a live worktree is still refused, by slugged id
+out="$(bash "$CLEANUP" "$m" --delete worktree:alpha/main 2>&1)"
+rc=$?
+assert_eq "slugged live worktree delete exits 1" 1 "$rc"
+assert_contains "slugged live worktree refused" "$out" "refused worktree:alpha/main"
+assert_contains "slugged refusal names the reason" "$out" "LIVE"
+assert_ok "alpha's live worktree intact" test -f "$m/code/alpha/worktrees/main/file.txt"
+
+# KM4: an id naming a repo that does not exist is refused, not resolved
+out="$(bash "$CLEANUP" "$m" --delete worktree:nosuch/thing 2>&1)"
+rc=$?
+assert_eq "unknown slug exits 1" 1 "$rc"
+assert_contains "unknown slug refused" "$out" "no repo 'nosuch'"
+
+# KM5: traversal is still impossible through the slug or the entry name
+out="$(bash "$CLEANUP" "$m" --delete "worktree:alpha/../../data" 2>&1)"
+rc=$?
+assert_eq "multi traversal id exits 1" 1 "$rc"
+assert_ok "data/ untouched by multi traversal attempt" test -d "$m/data"
+
+# KM6: branch deletion is per-repo — the slug picks the repo
+out="$(bash "$CLEANUP" "$m" --delete branch:beta/gone-in-beta 2>&1)"
+rc=$?
+assert_eq "slugged branch delete exits 0" 0 "$rc"
+assert_contains "slugged branch reported deleted" "$out" "deleted branch:beta/gone-in-beta"
+assert_fails "the branch is gone from beta" \
+  git --git-dir="$m/code/beta/.git" show-ref --verify -q refs/heads/gone-in-beta
+assert_ok "alpha's main is untouched" \
+  git --git-dir="$m/code/alpha/.git" show-ref --verify -q refs/heads/main
+
+# KM7: space-level ids (not per-repo) keep working unchanged
+touch "$m/.hyper-convert.preflight"
+echo junk > "$m/scratch/tmp.txt"
+out="$(bash "$CLEANUP" "$m" --delete evidence:preflight --delete scratch:contents 2>&1)"
+rc=$?
+assert_eq "space-level ids delete exits 0" 0 "$rc"
+assert_contains "preflight deleted in a multi space" "$out" "deleted evidence:preflight"
+assert_contains "scratch emptied in a multi space" "$out" "deleted scratch:contents"
+assert_ok "scratch directory itself stays" test -d "$m/scratch"
+
 finish
