@@ -34,6 +34,11 @@ moon/bun toolchain is not involved.
   prefix, `HYPER.md` marker, `.hyper/` dir, and `.claude/hyper.json` are
   user-facing contract; legacy `hyperdev` names must stay recognized (see
   `tests/test-l-legacy.sh`).
+- **Two space layouts.** Single-repo (bare `.git` at the space root) and
+  multi-repo (no root `.git`; each repo bare under `code/<slug>/`) are both
+  first-class — the marker/layout contract above covers either shape.
+  `tests/helpers.sh` has a multi-repo fixture, `make_multi_space`, for
+  exercising the second layout in tests.
 
 ## Process
 
