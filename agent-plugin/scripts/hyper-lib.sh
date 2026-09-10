@@ -35,11 +35,14 @@ dir_purpose() {
 # hosting remote) is not a space. Require the structure the docs promise — a
 # worktrees/ directory beside .git — or the explicit adoption marker.
 #
-# For multi the marker is mandatory: a directory holding some bare repos under
-# code/ is not self-identifying the way a bare root is, and guessing would
-# claim ordinary directories. The root must additionally have NO .git entry —
-# a root that is itself a repository is the bare shape (or a checkout), never
-# multi, whatever else sits under code/.
+# For multi the marker is mandatory: a directory called code/ is not
+# self-identifying the way a bare root is, and guessing would claim ordinary
+# directories. The root must additionally have NO .git entry — a root that is
+# itself a repository is the bare shape (or a checkout), never multi, whatever
+# else sits under code/. Repos under code/ are NOT required: a freshly created
+# --multi space (marker + empty code/, no repos added yet) is a real multi
+# space the moment it exists, not only once its first repo is added — nothing
+# about the shape's identity depends on what it currently holds.
 space_layout() {
   local d="${1:-$PWD}"
   # HYPERDEV.md is the legacy marker (pre-rename); spaces adopted under the
@@ -52,28 +55,35 @@ space_layout() {
     fi
     return 1
   fi
-  # No .git entry of any kind (file or directory) — the only shape left is
-  # multi, and only with the marker plus at least one bare repo under code/.
+  # No .git entry of any kind (file or directory), the marker, and a code/
+  # directory — the only shape left is multi. Whether code/ currently holds
+  # any repos is irrelevant to what the root itself is.
   [[ -e "$d/.git" ]] && return 1
   [[ -f "$d/HYPER.md" || -f "$d/HYPERDEV.md" ]] || return 1
-  local r
-  for r in "$d"/code/*/; do
-    [[ -d "$r/.git" ]] || continue
-    if [[ "$(git --git-dir="$r/.git" config --get core.bare 2>/dev/null)" == "true" ]]; then
-      echo multi
-      return 0
-    fi
-  done
-  return 1
+  [[ -d "$d/code" ]] || return 1
+  echo multi
+  return 0
 }
 
 # space_repos <root> — one repo slug per line, for a multi-repo space.
 # Prints nothing for a bare space (which has no slugs — its single repository
-# is the root itself). Discovery is by glob: code/<slug>/.git bare. There is
-# deliberately no config file to fall out of sync with the directories.
+# is the root itself) and nothing for an empty code/ (no repos added yet).
+# Discovery is by glob: code/<slug>/.git bare. There is deliberately no config
+# file to fall out of sync with the directories.
+#
+# nullglob is set locally (and restored) so an empty/absent code/ expands the
+# glob to nothing rather than the literal pattern string — without it, a
+# non-matching glob would fall through to the -d/-e tests below as a literal
+# "code/*" path, which happen to fail today but that must not be relied on.
 space_repos() {
   local d="${1:-$PWD}" r
-  for r in "$d"/code/*/; do
+  local -a matches
+  local restore_nullglob=0
+  shopt -q nullglob || restore_nullglob=1
+  shopt -s nullglob
+  matches=("$d"/code/*/)
+  [[ $restore_nullglob -eq 1 ]] && shopt -u nullglob
+  for r in "${matches[@]+"${matches[@]}"}"; do
     [[ -d "$r/.git" ]] || continue
     [[ "$(git --git-dir="$r/.git" config --get core.bare 2>/dev/null)" == "true" ]] || continue
     basename "$r"
@@ -105,6 +115,12 @@ worktrees_dir() {
     return 0
   fi
   echo "$d/worktrees"
+}
+
+# valid_slug <slug> — true when <slug> is a safe code/<slug>/ directory name:
+# lowercase alnum, dot, underscore, hyphen, not starting with a separator.
+valid_slug() {
+  [[ "$1" =~ ^[a-z0-9][a-z0-9._-]*$ ]]
 }
 
 # A space is exactly what space_layout accepts: a bare repo with worktrees/
@@ -278,6 +294,38 @@ When the user says "hyper X" or "space X" (e.g. "hyper notes", "space data"),
 they mean the \`X/\` directory at the space root — never a same-named
 directory inside a worktree, even if one exists there too.
 EOF
+}
+
+# add_repo_row_to_hyper_md <root> <slug> — append a row for a newly-added
+# repo to the Repositories table in an existing multi-repo HYPER.md. Targeted
+# insert, not a rewrite: write_hyper_md_multi regenerates the whole file from
+# space_repos, which would blow away any "What it is" text the user already
+# filled in for other rows. Idempotent — a row for this slug is never
+# duplicated on re-run.
+add_repo_row_to_hyper_md() {
+  local root="$1" slug="$2" file
+  file="$root/HYPER.md"
+  [[ -f "$file" ]] || return 0
+  grep -qF "| \`$slug\` |" "$file" && return 0
+  local branch row
+  branch="$(repo_default_branch "$root/code/$slug/.git")"
+  row="| \`$slug\` | _(describe this repo)_ | \`$branch\` |"
+  node -e '
+    const fs = require("fs");
+    const [file, row] = process.argv.slice(1);
+    const text = fs.readFileSync(file, "utf8");
+    const marker = "|------|------------|----------------|\n";
+    const i = text.indexOf(marker);
+    if (i === -1) process.exit(4);
+    const insertAt = i + marker.length;
+    let end = text.indexOf("\n\n", insertAt);
+    if (end === -1) end = text.indexOf("\n## ", insertAt);
+    if (end === -1) process.exit(4);
+    const before = text.slice(0, end);
+    const after = text.slice(end);
+    const cleaned = before.replace(/\n\| _\(none yet\)_ \| \| \|/, "");
+    fs.writeFileSync(file, cleaned + "\n" + row + after);
+  ' "$file" "$row" 2>/dev/null || return 1
 }
 
 # The agent-facing pointer, appended to a fresh AGENTS.md and to any

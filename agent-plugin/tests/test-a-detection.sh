@@ -120,13 +120,24 @@ git init -q --bare "$d/code/x/.git"
 touch "$d/HYPER.md"
 assert_eq "root with .git AND code/ is bare, not multi" "bare" "$(space_layout "$d")"
 
-# A14: negative — a non-bare repo under code/ does not count, so a directory
-# of ordinary checkouts is not a space.
+# A14: a non-bare repo under code/ does not count as a tracked repo (ignored,
+# not counted), but the root is still a multi-repo space — marker + no root
+# .git + a code/ dir is the whole test, independent of what code/ holds.
 d="$FIX/a14"; mkdir -p "$d"
 touch "$d/HYPER.md"
 make_checkout "$d/code/y"
-assert_eq "code/<slug>/.git non-bare -> no layout" "" "$(space_layout "$d")"
-assert_fails "a directory of plain checkouts is not a space" is_space "$d"
+assert_eq "code/<slug>/.git non-bare -> still multi (space_layout ignores it)" "multi" "$(space_layout "$d")"
+assert_eq "space_repos ignores the non-bare entry" "" "$(space_repos "$d")"
+
+# A14b: an empty code/ is a real multi space too — an empty --multi space
+# exists the moment it's created, not only once its first repo is added.
+d="$FIX/a14b"; mkdir -p "$d/code"
+touch "$d/HYPER.md"
+assert_eq "marker + empty code/ -> multi" "multi" "$(space_layout "$d")"
+assert_ok "an empty multi-repo space is a space" is_space "$d"
+assert_eq "space_repos lists nothing yet" "" "$(space_repos "$d")"
+assert_eq "find_space_root finds an empty multi space from its own root" \
+  "$d" "$(find_space_root "$d")"
 
 # A15: negative — bare repos under code/ but no marker. Nothing self-identifies
 # here the way a bare root does, so the marker is mandatory.
@@ -171,6 +182,31 @@ d="$FIX/a17c"; make_multi_space "$d" solo
 scaffold_dirs "$d" >/dev/null 2>&1
 assert_ok "scaffold_dirs creates the local-only dirs" test -d "$d/notes"
 assert_ok "scaffold_dirs creates no worktrees/ at a multi root" test ! -d "$d/worktrees"
+# A18: find_space_root ambiguity — a genuine bare space accidentally nested
+# inside a multi-repo worktree's own subdirectory. The walk must stop at the
+# nested bare space (it does not look like code/<slug> two levels under a
+# multi root), while cwd in the owning worktree itself still resolves to the
+# multi root.
+d="$FIX/a18"; make_multi_space "$d" alpha
+nested="$d/code/alpha/worktrees/main/sub"
+make_bare_space "$nested"
+assert_eq "find_space_root inside a nested bare space resolves to the nested one" \
+  "$nested" "$(find_space_root "$nested/worktrees")"
+assert_eq "find_space_root in the multi worktree above the nesting resolves to the multi root" \
+  "$d" "$(find_space_root "$d/code/alpha/worktrees/main")"
+
+# A19: a bare space living at some/unrelated/code/<name>/ with no marker (and
+# no code/ dir) at its parent is just a bare space — the parent is never
+# mistaken for a multi-repo root just because a bare repo happens to sit
+# under a directory named code/.
+d="$FIX/a19"; mkdir -p "$d/some/unrelated/code"
+make_bare_space "$d/some/unrelated/code/thing"
+assert_eq "unrelated code/<name>/ bare repo resolves as bare" \
+  "$d/some/unrelated/code/thing" "$(find_space_root "$d/some/unrelated/code/thing")"
+assert_fails "the unrelated parent is not itself a space" is_space "$d/some/unrelated"
+assert_eq "space_layout of the unrelated parent is empty" "" \
+  "$(space_layout "$d/some/unrelated")"
+
 d="$FIX/a17d"; make_bare_space "$d"
 scaffold_dirs "$d" >/dev/null 2>&1
 assert_ok "scaffold_dirs still creates worktrees/ in a bare space" test -d "$d/worktrees"
