@@ -13,12 +13,14 @@ methodology a plugin can deliver today: **Tools Integration** and
 
 ## What is a space
 
-A space gives a project a fixed shape: the git repo, every worktree, and a
-small set of local-only directories (`data/`, `notes/`, `scratch/`, `bin/`)
-for files that must never be committed. `HYPER.md` at the space root is
-the opt-in marker. A space has exactly one shape:
+A space gives a project a fixed shape: the git repo (or repos), every
+worktree, and a small set of local-only directories (`data/`, `notes/`,
+`scratch/`, `bin/`) for files that must never be committed. `HYPER.md` at
+the space root is the opt-in marker. A space has exactly one of two shapes:
 
-```
+**Single-repo** — the root itself is the bare repo:
+
+```text
 <space>/
 ├── .git/         bare — no working tree
 ├── .claude/      settings (wire the space memory)
@@ -28,11 +30,28 @@ the opt-in marker. A space has exactly one shape:
 └── HYPER.md
 ```
 
-The root is not a working tree, so nothing there can be committed — not by
-accident, not by a stray `git add -A`. Local-only files get a home that is
-*structurally* incapable of reaching the remote. Space files and project
-files never share a directory: the project lives in `worktrees/<branch>`,
-the space's local-only files live beside it.
+**Multi-repo** — no `.git` at the root; each tracked repo is its own bare
+repo under `code/<slug>/`, discovered by globbing `code/*/.git` (no
+repos config file):
+
+```text
+<space>/
+├── code/
+│   ├── <slug>/
+│   │   ├── .git/                bare — no working tree
+│   │   └── worktrees/<branch>/  one checkout per branch
+│   └── <slug>/...
+├── .claude/      settings (wire the space memory)
+├── .hyper/    plugin metadata; space memory in .hyper/memory/
+├── data/  notes/  scratch/  bin/
+└── HYPER.md
+```
+
+The root is not a working tree in either shape, so nothing there can be
+committed — not by accident, not by a stray `git add -A`. Local-only files
+get a home that is *structurally* incapable of reaching the remote. Space
+files and project files never share a directory: project code lives in a
+worktree, the space's local-only files live beside it.
 
 Adopting an ordinary checkout therefore means **converting** it: the repo
 becomes bare, the entire working tree — dirty state, untracked files,
@@ -55,8 +74,8 @@ in any mode, on any path.
 | Command | What it does |
 |---|---|
 | `/hyper:help` | What the plugin is, all commands, and the standard setup flow |
-| `/hyper:init <repo-url> [space-name] [--default-branch <name>]` | Create a new space from a git remote |
-| `/hyper:adopt [space-path] [--apply]` | Adopt an existing repo: scaffold a bare repo additively, or convert an ordinary checkout into a space — dry run first, nothing ever deleted |
+| `/hyper:init <repo-url> [space-name] [--default-branch <name>]` | Create a new space from a git remote — or `--multi <name>` for an empty multi-repo space, or `<repo-url> --slug <slug>` to add a repo to one |
+| `/hyper:adopt [space-path] [--apply]` | Adopt an existing repo: scaffold a bare repo additively (single- or multi-repo), or convert an ordinary checkout into a space — dry run first, nothing ever deleted |
 | `/hyper:audit [space-path]` | Read-only drift report: missing dirs, loose files, stale worktrees |
 | `/hyper:cleanup [space-path]` | Delete what audit reports — candidates listed first, every deletion confirmed per item and re-verified; the plugin's one deleting command |
 | `/hyper:tools [project-path]` | Detect the project's own toolchain and wire up the check hook |

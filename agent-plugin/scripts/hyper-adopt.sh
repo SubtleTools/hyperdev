@@ -32,20 +32,109 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$root" ]]; then
-  root="$(find_space_root "$PWD")" || {
-    echo "not inside a space (no bare .git + worktrees/ found)" >&2
-    echo "pass a path explicitly, or use hyper-init.sh to create one" >&2
-    exit 1
-  }
+  root="$(find_space_root "$PWD")" || root="$PWD"
 fi
 
 root="$(cd "$root" && pwd)"
+name="$(basename "$root")"
+
+# ===========================================================================
+# Case C: already multi-repo shaped (code/*/.git bare, no .git at the root).
+# Converting a single-repo checkout INTO a multi-repo space is out of scope —
+# this only recognizes a root that is already laid out that way and scaffolds
+# what is missing. Checked before the git-repository checks below, since a
+# multi-repo root is deliberately not a git repository at all.
+# ===========================================================================
+multi_shaped=0
+if [[ ! -e "$root/.git" ]] && [[ -d "$root/code" ]]; then
+  # nullglob so an empty code/ expands to nothing rather than the literal
+  # pattern string falling through to the -d test below.
+  shopt -q nullglob && multi_nullglob_was_set=1 || multi_nullglob_was_set=0
+  shopt -s nullglob
+  multi_repo_candidates=("$root"/code/*/)
+  [[ $multi_nullglob_was_set -eq 1 ]] || shopt -u nullglob
+  for r in "${multi_repo_candidates[@]+"${multi_repo_candidates[@]}"}"; do
+    [[ -d "$r/.git" ]] || continue
+    if [[ "$(git --git-dir="$r/.git" config --get core.bare 2>/dev/null)" == "true" ]]; then
+      multi_shaped=1
+      break
+    fi
+  done
+fi
+
+if [[ $multi_shaped -eq 1 ]]; then
+  echo "Space: $root"
+  echo "Layout:    multi"
+  echo
+
+  if [[ $apply -eq 1 ]]; then
+    # Marker before scaffold: space_layout (and so scaffold_dirs's own
+    # auto-detection of "no root worktrees/") needs HYPER.md + code/ to
+    # recognize the multi shape; write it first so detection works below
+    # even when this is the very first time this root is scaffolded.
+    mkdir -p "$root/.claude"
+    if [[ -f "$root/HYPER.md" ]]; then
+      echo "  exists   HYPER.md (left untouched)"
+    else
+      write_hyper_md_multi "$root" "$name"
+      echo "  wrote    HYPER.md"
+    fi
+    echo "Directories:"
+    scaffold_dirs "$root"
+    ensure_agent_docs "$root" "$name"
+    if [[ -f "$root/.hyper/memory/hyper-layout.md" ]]; then
+      echo "  exists   .hyper/memory/hyper-layout.md (left untouched)"
+    else
+      write_memory_seed "$root" "$name"
+      echo "  wrote    .hyper/memory/hyper-layout.md"
+    fi
+    local_slug=""
+    for local_slug in $(space_repos "$root" 2>/dev/null || true); do
+      [[ -n "$local_slug" ]] || continue
+      branch="$(git --git-dir="$root/code/$local_slug/.git" symbolic-ref --short HEAD 2>/dev/null || echo main)"
+      ensure_worktrunk_config "$root/code/$local_slug/.git" "$branch"
+    done
+    echo
+    echo "Scaffold applied."
+    echo
+    echo "Next steps:"
+    echo "  /hyper:tools   wire the project's linter/typechecker into the check hook"
+    echo "  /hyper:audit   periodic health report (drift, debris, stale branches)"
+  else
+    echo "Directories (dry run):"
+    for d in data notes scratch bin; do
+      if [[ -d "$root/$d" ]]; then
+        echo "  exists   $d/"
+      else
+        echo "  would create  $d/  — $(dir_purpose "$d")"
+      fi
+    done
+    if [[ -f "$root/HYPER.md" ]]; then
+      echo "  exists   HYPER.md"
+    else
+      echo "  would create  HYPER.md (multi-repo layout)"
+    fi
+    for agent_doc in AGENTS.md CLAUDE.md; do
+      if [[ -L "$root/$agent_doc" ]]; then
+        echo "  exists   $agent_doc (symlink)"
+      elif [[ -f "$root/$agent_doc" ]]; then
+        echo "  exists   $agent_doc"
+      else
+        echo "  would create  $agent_doc"
+      fi
+    done
+    echo
+    echo "Dry run. Re-run with --apply to create directories and docs."
+  fi
+  exit 0
+fi
 
 # adopt is the command that performs the opt-in, so it must accept a plain
 # repository that space_layout would still reject. Any git root qualifies;
 # detection tightens again once the marker exists.
 if ! git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
   echo "not a git repository: $root" >&2
+  echo "pass a path explicitly, or use hyper-init.sh to create a space" >&2
   exit 1
 fi
 
@@ -54,8 +143,6 @@ if [[ ! -d "$root/.git" ]]; then
   echo "this looks like a linked worktree; adopt the space it belongs to" >&2
   exit 1
 fi
-
-name="$(basename "$root")"
 
 # ---------------------------------------------------------------------------
 # Shared reporting: the loose-entry scan against a bare space root, and the

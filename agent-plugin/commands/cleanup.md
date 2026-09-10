@@ -11,6 +11,14 @@ anything. Audit reports; cleanup acts — and only on what audit already
 classifies as debris, only for ids the user confirmed, each re-verified at
 deletion time. There is no `--all` flag, deliberately, and never will be.
 
+In a multi-repo space, cleanup iterates every repo. Worktree and branch ids
+there are prefixed with the slug — `worktree:<slug>/<name>` and
+`branch:<slug>/<name>` — so an id names which repo it belongs to.
+Space-level ids (`parked:<name>`, `backup:memory-index`,
+`evidence:preflight`, `scratch:contents`) are never slug-prefixed in either
+layout — they belong to the space, not a repo. Single-repo worktree/branch
+ids are unchanged.
+
 ## Usage
 
 ```
@@ -25,11 +33,11 @@ same classifications `hyper-audit.sh` makes, nothing of its own:
 
 | Id | What it is |
 |---|---|
-| `worktree:<name>` | `worktrees/` entry that is ORPHANED (gitdir missing) or leftover build output (no `.git`). A live registered worktree is refused loudly. |
+| `worktree:<name>` (or `worktree:<slug>/<name>` in a multi-repo space) | `worktrees/` entry that is ORPHANED (gitdir missing) or leftover build output (no `.git`). A live registered worktree is refused loudly. |
 | `parked:<name>` | entry under the legacy `.claude/worktrees/` that conversion parked — not a registered worktree |
 | `backup:memory-index` | `.claude/MEMORY.md.hyper-orig`, the pre-conversion memory index backup |
 | `evidence:preflight` | `.hyper-convert.preflight`, a conversion's capture file |
-| `branch:<name>` | local branch whose upstream is gone. Deleted with `git branch -d` **only** — never `-D`; an unmerged branch is refused with instructions for the human. |
+| `branch:<name>` (or `branch:<slug>/<name>` in a multi-repo space) | local branch whose upstream is gone. Deleted with `git branch -d` **only** — never `-D`; an unmerged branch is refused with instructions for the human. |
 | `scratch:contents` | the contents of `scratch/` (the directory itself stays) |
 
 ## The flow

@@ -18,7 +18,9 @@ for Claude Code. Two ideas:
    checkout under `worktrees/<branch>`, and local-only dirs (`data/` `notes/`
    `scratch/` `bin/`) that can never be committed — dumps, briefs, and
    secrets get a home that is structurally incapable of reaching the remote.
-   Space files and project files never mix.
+   Space files and project files never mix. A **multi-repo space** wraps
+   several repos instead of one: no `.git` at the root, each repo bare under
+   `code/<slug>/` with its own `worktrees/`.
 2. **Toolchain integration.** The project's *own* linter/typechecker runs
    after every edit and failures feed straight back to the agent — plus
    friction on new dependencies, session context injection, spec-driven
@@ -28,8 +30,8 @@ for Claude Code. Two ideas:
 
 | Command | What it does |
 |---|---|
-| `/hyper:init <repo-url>` | create a new space from a remote — or `--new <name>` from nothing |
-| `/hyper:adopt [path]` | bring an existing repo into the layout — scaffolds a bare repo, **converts** an ordinary checkout (dry run first, four data-safety guarantees) |
+| `/hyper:init <repo-url>` | create a new space from a remote — or `--new <name>` from nothing — or `--multi <name>` for an empty multi-repo space — or `<repo-url> --slug <slug>` to add a repo to an existing multi-repo space |
+| `/hyper:adopt [path]` | bring an existing repo into the layout — scaffolds a bare repo (single- or multi-repo), **converts** an ordinary checkout (dry run first, four data-safety guarantees) |
 | `/hyper:tools` | detect the project's toolchain, wire the per-edit check hook, recommend new tools by aspect |
 | `/hyper:audit` | read-only health report: drift, debris, stale branches, secrets |
 | `/hyper:cleanup` | delete what audit found — candidates listed first, confirmed per item; the one command that deletes |

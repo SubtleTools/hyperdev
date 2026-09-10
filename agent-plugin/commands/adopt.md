@@ -7,8 +7,9 @@ argument-hint: "[space-path] [--apply]"
 # Adopt
 
 Brings an existing repository into the space layout. A space has exactly one
-shape — bare `.git` at the root, the working tree in `worktrees/<branch>` —
-so what adopt does depends on what it finds:
+of two shapes — single-repo (bare `.git` at the root, the working tree in
+`worktrees/<branch>`) or multi-repo (no `.git` at the root, each repo bare
+under `code/<slug>/`) — so what adopt does depends on what it finds:
 
 - **Already bare** (a space, or a plain bare repo opting in): additive
   scaffold. Creates missing dirs and docs, lists loose entries at the root
@@ -17,8 +18,10 @@ so what adopt does depends on what it finds:
   working tree is wrapped into `worktrees/<branch>`. Space files and project
   files never share a directory, so decorating the checkout is not an option —
   wrapping it is.
+- **Already multi-repo** (`code/*/.git` bare, no root `.git`): additive
+  scaffold, same spirit as case 1 — see [Case 3](#case-3-multi-repo-space-additive-scaffold).
 
-In both cases, dry run by default: without `--apply` nothing changes.
+In all cases, dry run by default: without `--apply` nothing changes.
 **Nothing is ever deleted, in any mode, on any path.**
 
 ## Usage
@@ -153,6 +156,18 @@ because nothing is ever deleted, everything needed to reconcile by hand is
 still on disk. If the `git worktree add` step fails, the conversion rolls
 itself back (un-bares the repo, moves everything home); a failure after that
 prints exactly what remains in staging and how to finish or abandon by hand.
+
+## Case 3: multi-repo space, additive scaffold
+
+At a directory that already looks multi-repo — at least one bare
+`code/*/.git`, no `.git` at the root — adopt scaffolds additively, same
+contract as Case 1: local-only dirs, `HYPER.md` (the multi-repo template) if
+missing, AGENTS.md/CLAUDE.md, settings, and worktrunk config per repo under
+`code/<slug>/`. Existing files are left alone.
+
+**Converting an existing single-repo space into a multi-repo one is not
+supported in this release.** If you are asked to do that, say so explicitly
+rather than attempting a workaround — there is no code path for it.
 
 ### Agent instructions for a conversion
 

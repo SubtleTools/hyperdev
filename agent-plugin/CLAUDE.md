@@ -9,7 +9,7 @@ moon/bun toolchain is not involved.
 
 - **Never develop in `~/.claude/plugins/marketplaces/`.** That clone
   auto-updates and will discard uncommitted work. Develop here, commit, push.
-- **Run `agent-plugin/tests/run.sh` before committing.** 281 assertions;
+- **Run `agent-plugin/tests/run.sh` before committing.** 487 assertions;
   `.github/workflows/agent-plugin.yml` enforces the same suite plus
   `bash -n` and `shellcheck --severity=warning` in CI.
 - **Test hooks by piping real hook JSON into the script** — never by running
@@ -34,6 +34,11 @@ moon/bun toolchain is not involved.
   prefix, `HYPER.md` marker, `.hyper/` dir, and `.claude/hyper.json` are
   user-facing contract; legacy `hyperdev` names must stay recognized (see
   `tests/test-l-legacy.sh`).
+- **Two space layouts.** Single-repo (bare `.git` at the space root) and
+  multi-repo (no root `.git`; each repo bare under `code/<slug>/`) are both
+  first-class — the marker/layout contract above covers either shape.
+  `tests/helpers.sh` has a multi-repo fixture, `make_multi_space`, for
+  exercising the second layout in tests.
 
 ## Process
 

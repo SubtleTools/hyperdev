@@ -69,6 +69,92 @@ rc=$?
 assert_eq "no arguments exits 2" 2 "$rc"
 assert_contains "usage shows the --new form" "$out" "--new"
 
+# M6: --multi builds an empty multi-repo space
+out="$( (cd "$FIX" && PATH="$clean_path" bash "$INIT" --multi mspace) 2>&1 )"
+rc=$?
+md="$FIX/mspace"
+assert_eq "--multi exits 0" 0 "$rc"
+assert_fails "no .git at multi-repo root" test -e "$md/.git"
+assert_ok "code/ dir created" test -d "$md/code"
+for sd in data notes scratch bin; do
+  assert_ok "multi scaffolded $sd/" test -d "$md/$sd"
+done
+assert_fails "multi space has no root worktrees/" test -d "$md/worktrees"
+assert_ok "multi HYPER.md written" test -f "$md/HYPER.md"
+assert_contains "multi HYPER.md documents multi-repo layout" "$(cat "$md/HYPER.md")" "multi-repo layout"
+assert_ok "multi memory seed written" test -f "$md/.hyper/memory/hyper-layout.md"
+
+# M6b: --slug as the very first repo of a fresh --multi space, run from the
+# root. space_layout now recognizes an empty --multi space on its own (marker
+# + no .git + code/ dir, no repo required), so find_space_root/space_layout
+# — not a manual walk — must resolve this correctly with zero repos present.
+out="$( (cd "$FIX" && PATH="$clean_path" bash "$INIT" --multi firstroot) 2>&1 )"
+fr="$FIX/firstroot"
+out="$( (cd "$fr" && PATH="$clean_path" bash "$INIT" --new solo --slug solo) 2>&1 )"
+assert_eq "first --slug from a fresh --multi space's root exits 0" 0 "$?"
+assert_ok "code/solo created as the space's first repo" test -d "$fr/code/solo"
+assert_eq "space_layout recognizes it as multi once populated" "multi" \
+  "$(bash -c "source '$SCRIPTS_DIR/hyper-lib.sh'; space_layout '$fr'")"
+
+# M6c: same, but the very first --slug is run from a local-only dir (notes/)
+# rather than the space root, before any repo exists anywhere in the space.
+out="$( (cd "$FIX" && PATH="$clean_path" bash "$INIT" --multi firstnotes) 2>&1 )"
+fn="$FIX/firstnotes"
+mkdir -p "$fn/notes"
+out="$( (cd "$fn/notes" && PATH="$clean_path" bash "$INIT" --new solo --slug solo) 2>&1 )"
+assert_eq "first --slug from notes/ of a fresh --multi space exits 0" 0 "$?"
+assert_ok "code/solo created from notes/ as the space's first repo" test -d "$fn/code/solo"
+
+# M7: --slug adds a repo, from the space root
+out="$( (cd "$md" && PATH="$clean_path" bash "$INIT" --new alpha --slug alpha) 2>&1 )"
+rc=$?
+assert_eq "--slug (root) exits 0" 0 "$rc"
+assert_eq "code/alpha is bare" "true" \
+  "$(git --git-dir="$md/code/alpha/.git" config --get core.bare)"
+assert_ok "code/alpha worktree created" test -d "$md/code/alpha/worktrees/main"
+assert_eq "space_layout now says multi" "multi" \
+  "$(bash -c "source '$SCRIPTS_DIR/hyper-lib.sh'; space_layout '$md'")"
+hyper_md="$(cat "$md/HYPER.md")"
+assert_contains "HYPER.md gained an alpha row" "$hyper_md" '`alpha`'
+
+# M8: --slug from a local-only dir (notes/) inside the space
+mkdir -p "$md/notes"
+out="$( (cd "$md/notes" && PATH="$clean_path" bash "$INIT" --new beta --slug beta) 2>&1 )"
+assert_eq "--slug (notes/) exits 0" 0 "$?"
+assert_ok "code/beta created from notes/" test -d "$md/code/beta"
+hyper_md="$(cat "$md/HYPER.md")"
+assert_contains "HYPER.md gained a beta row" "$hyper_md" '`beta`'
+assert_eq "no duplicate alpha row" 1 \
+  "$(grep -cF '| `alpha` |' "$md/HYPER.md")"
+
+# M9: --slug from inside an existing repo's worktree
+out="$( (cd "$md/code/alpha/worktrees/main" && PATH="$clean_path" bash "$INIT" --new gamma --slug gamma) 2>&1 )"
+assert_eq "--slug (inside code/alpha/worktrees/main) exits 0" 0 "$?"
+assert_ok "code/gamma created from inside another repo's worktree" test -d "$md/code/gamma"
+
+# M10: --slug outside a multi space fails
+out="$( (cd "$FIX" && PATH="$clean_path" bash "$INIT" --new delta --slug delta) 2>&1 )"
+rc=$?
+assert_eq "--slug outside a multi space exits non-zero" 1 "$rc"
+assert_contains "refusal explains no multi-repo space found" "$out" "not inside a multi-repo space"
+
+# M11: --slug inside a bare (single-repo) space fails
+out="$( (cd "$d" && PATH="$clean_path" bash "$INIT" --new delta --slug delta) 2>&1 )"
+rc=$?
+assert_eq "--slug inside a bare space exits non-zero" 1 "$rc"
+assert_contains "refusal names bare space" "$out" "bare (single-repo) space"
+
+# M12: duplicate slug fails
+out="$( (cd "$md" && PATH="$clean_path" bash "$INIT" --new alpha2 --slug alpha) 2>&1 )"
+rc=$?
+assert_eq "duplicate slug exits non-zero" 1 "$rc"
+assert_contains "duplicate slug refusal names it" "$out" "code/alpha already exists"
+
+# M13: invalid slug fails
+out="$( (cd "$md" && PATH="$clean_path" bash "$INIT" --new zed --slug ZED) 2>&1 )"
+rc=$?
+assert_eq "invalid slug exits 2" 2 "$rc"
+
 # M5: missing git identity refuses BEFORE creating anything
 env_home="$FIX/no-ident-home"
 mkdir -p "$env_home"

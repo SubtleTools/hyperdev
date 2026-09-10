@@ -8,13 +8,15 @@ description: Use when working in or setting up a project space — a bare git re
 A space gives a project a fixed shape: every worktree in one place, plus
 directories for files that must never be committed.
 
-A space has exactly one layout. Space files and project files never share a
-directory — the project lives in `worktrees/<branch>`, the space's local-only
-directories live beside it.
+A space has exactly one of two layouts, single-repo or multi-repo. In both,
+space files and project files never share a directory — project code lives
+in a worktree, the space's local-only directories live beside it.
 
 ## The layout
 
-```
+**Single-repo** — the space root itself is the bare repo:
+
+```text
 <space>/
 ├── .git/         bare repo — shared object store, no working tree
 ├── .claude/      settings scoped to this project (wire the space memory)
@@ -26,10 +28,30 @@ directories live beside it.
 └── HYPER.md
 ```
 
-The root is not a working tree. Nothing there can be committed — not by
-accident, not by a stray `git add -A`. Local-only files get a home structurally
-incapable of reaching the remote. There is no `.gitignore` to maintain and no
-protection to erode: the safety is structural, which is the point.
+**Multi-repo** — the root holds no `.git`; each tracked repo is its own bare
+repo under `code/<slug>/`:
+
+```text
+<space>/
+├── code/
+│   ├── <slug>/
+│   │   ├── .git/                bare repo for this repo
+│   │   └── worktrees/<branch>/  one worktree per branch
+│   └── <slug>/...
+├── .claude/      settings scoped to this project (wire the space memory)
+├── .hyper/    plugin metadata; space memory in .hyper/memory/
+├── data/  notes/  scratch/  bin/
+└── HYPER.md
+```
+
+There is no repos config file — repos are discovered by globbing
+`code/*/.git`.
+
+The root is not a working tree in either layout. Nothing there can be committed
+— not by accident, not by a stray `git add -A`. Local-only files get a home
+structurally incapable of reaching the remote. There is no `.gitignore` to
+maintain and no protection to erode: the safety is structural, which is the
+point.
 
 An ordinary checkout is not a space and cannot be decorated into one.
 `/hyper:adopt` **converts** it: the repo becomes bare and the whole working
@@ -46,19 +68,28 @@ anything.
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/hyper-stack.sh" detect   # toolchain
 ```
 
-For the layout, `hyper-lib.sh` exposes `space_layout <dir>` (prints
-`bare` or nothing) and `worktrees_dir <dir>`. Rules of thumb:
+For the layout, `hyper-lib.sh` exposes `space_layout <dir>` (prints `bare`,
+`multi`, or nothing) and `worktrees_dir <dir> [slug]` (the `slug` is required
+in a multi-repo space — there is no single answer without one). Rules of
+thumb:
 
 - `.git` is a **directory** with `core.bare=true`, with a `worktrees/` dir or
-  `HYPER.md` beside it → a space. A bare repo with *neither* is a plain
-  mirror or hosting remote, not a space — `space_layout` prints nothing for it.
+  `HYPER.md` beside it → a single-repo space. A bare repo with *neither* is a
+  plain mirror or hosting remote, not a space — `space_layout` prints nothing
+  for it.
 - `.git` is a **directory**, not bare → an ordinary checkout; not a space
   until `/hyper:adopt` converts it.
 - `.git` is a **file** → you are in a linked worktree, not a space root.
+- **No** `.git` at the root, `HYPER.md` present, and a `code/` directory →
+  a multi-repo space. Repos under `code/` are optional — an empty `code/`
+  is still a multi-repo space the moment `hyper init --multi` creates it;
+  `space_repos <dir>` lists the slugs actually found (globbing
+  `code/*/.git`, bare only).
 
 A plain bare repository is *not* treated as a space until it opts in by having
 `HYPER.md` or a top-level `worktrees/`. Without that gate every mirror on
-the machine would claim to be one.
+the machine would claim to be one. Same principle for multi-repo: a directory
+with no `.git` and no marker is just a directory, never assumed to be a space.
 
 ## The corollary
 
@@ -74,6 +105,9 @@ exactly one disk.
 | output you will not miss tomorrow | `scratch/` |
 | a script you run against this project | `bin/` |
 | part of the codebase | a worktree — it gets committed |
+
+In a multi-repo space, "a worktree" means `code/<slug>/worktrees/<branch>` —
+the local-only dirs are still at the space root, never inside `code/<slug>/`.
 
 When unsure between `notes/` and `scratch/`: if losing it would cost you more
 than ten minutes, it is not scratch.
@@ -127,8 +161,12 @@ confirmed id at a time, re-verified at deletion time.
 - `/hyper:help` — orientation: what the plugin is, all commands, the
   standard flow. Point new users here first.
 - `/hyper:init <repo-url> [name]` — create a new space
+- `/hyper:init --multi <name>` — create a new, empty multi-repo space
+- `/hyper:init <repo-url> --slug <slug>` (or `--new <name> --slug <slug>`) —
+  from inside an existing multi-repo space, add a repo at `code/<slug>/`
 - `/hyper:adopt [path] [--apply]` — scaffold a bare repo into a space, or
-  convert an ordinary checkout into one
+  convert an ordinary checkout into one; at a directory that already looks
+  multi-repo, scaffold it additively (see [`/hyper:adopt`](../../commands/adopt.md))
 - `/hyper:audit [path]` — report drift, read-only. The mechanical checks
   are scripted (`hyper-audit.sh`); judging each finding is not.
 - `/hyper:cleanup [path]` — the audit-findings executor and the one
@@ -147,13 +185,21 @@ confirmed id at a time, re-verified at deletion time.
 ## Detecting a space
 
 See "Am I in one" above for the layout rules. `HYPER.md` is the
-explicit marker, but a space is also recognised from structure alone —
-a bare `.git` with a top-level `worktrees/` beside it — so spaces predating
-this plugin still work without the marker.
+explicit marker, but a single-repo space is also recognised from structure
+alone — a bare `.git` with a top-level `worktrees/` beside it — so spaces
+predating this plugin still work without the marker. A multi-repo space has
+no such structural fallback for `space_layout`: it requires `HYPER.md` (or
+the legacy `HYPERDEV.md`) plus a `code/` directory — `/hyper:adopt`, unlike
+`space_layout`, *does* recognize an unmarked multi-shaped directory (see
+`/hyper:adopt` case C) and writes the marker as part of scaffolding it.
 
 To find the root from anywhere inside, walk up until that shape appears. A
 linked worktree has a `.git` *file*, so it is skipped and the walk continues to
-the real root. When `cwd` is the root itself, take extra care — that is where
+the real root. In a multi-repo space, `find_space_root` resolves from inside
+`code/<slug>/worktrees/<branch>/...`, from `code/<slug>/`, from a local-only
+dir, or from the root itself — except a brand-new `--multi` space with no
+repos yet, which only resolves from the root (nothing under `code/` to walk
+up through). When `cwd` is the root itself, take extra care — that is where
 commits and loose files go wrong.
 
 ## Worktrunk interaction
@@ -171,3 +217,8 @@ project — a space must use that directory name for `wt` to work correctly.
 Worktrees of a bare repo get a `.git` *file* rather than a directory, which
 breaks relative `core.hooksPath`. The worktrunk `post-start` hook fixes it with
 `git config core.hooksPath "$(git rev-parse --git-common-dir)/hooks"`.
+
+In a multi-repo space, `repo_path` is `code/<slug>/`, so the same config
+resolves to `code/<slug>/worktrees/<branch>` — which is why `wt switch` has
+to run from inside `code/<slug>/` (or one of its worktrees): worktrunk
+resolves the repo from cwd, and cwd at the space root has no repo to resolve.
