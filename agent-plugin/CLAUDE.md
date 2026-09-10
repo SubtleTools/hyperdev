@@ -9,7 +9,7 @@ moon/bun toolchain is not involved.
 
 - **Never develop in `~/.claude/plugins/marketplaces/`.** That clone
   auto-updates and will discard uncommitted work. Develop here, commit, push.
-- **Run `agent-plugin/tests/run.sh` before committing.** 430 assertions;
+- **Run `agent-plugin/tests/run.sh` before committing.** 487 assertions;
   `.github/workflows/agent-plugin.yml` enforces the same suite plus
   `bash -n` and `shellcheck --severity=warning` in CI.
 - **Test hooks by piping real hook JSON into the script** — never by running
